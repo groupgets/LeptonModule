@@ -4,8 +4,8 @@ LeptonModule
 
 raspberrypi_capture
 --------------
-This is for the raspberry pi 
-you have to enable the spi and i2c ports for this code to work. 
+This is for the raspberry pi, 
+you have to enable the spi and i2c ports first for this code to work. 
 
 1. sudo vi /etc/modules
 2. add # in front of spi-bcm2708 and ic2-dev
