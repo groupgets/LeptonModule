@@ -17,5 +17,5 @@ you have to enable the spi and i2c ports first for this code to work.
 
 arduino_i2c
 --------------
-This example shows how to read the i2c ports using an Arduio
+This example shows how to read the i2c ports using an Arduio. 
 Note that most arduio hardware does not have enough memory to buffer the thermal image. 80*60*2 = 9600 bytes
