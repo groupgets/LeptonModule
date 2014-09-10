@@ -2,6 +2,7 @@
 
 #include "Palettes.h"
 #include "SPI.h"
+#include "Lepton_I2C.h"
 
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
@@ -35,6 +36,11 @@ void LeptonThread::run()
 				j = -1;
 				resets += 1;
 				usleep(1000);
+				if(resets == 750) {
+					SpiClosePort(0);
+					usleep(750000);
+					SpiOpenPort(0);
+				}
 			}
 		}
 		if(resets >= 30) {
