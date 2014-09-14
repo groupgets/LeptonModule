@@ -1,0 +1,2 @@
+make -r
+pause
