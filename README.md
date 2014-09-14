@@ -19,3 +19,10 @@ arduino_i2c
 --------------
 This example shows how to read the i2c ports using an Arduino. 
 Note that most Arduino hardware does not have enough memory to buffer the thermal image. 80*60*2 = 9600 bytes. Some of the Arm based units will work. 
+
+
+STM32F3Discovery_ChibiOS
+--------------
+Download and install ChibiOS_2.6.5 into the same directory first. 
+This example takes the SPI data stream from the Lepton module, buffers it and send it out the USB VCP device. 
+On the PC the binary stream of data can be parsed easily by looking for the 0xdeadbeef header on each frame. 
