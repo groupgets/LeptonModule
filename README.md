@@ -13,3 +13,9 @@ you have to enable the spi and i2c ports first for this code to work.
 3. to compile the code just run "gcc raspberry_pi_capture.c"
 4. to capture an image run "sudo ./a.out"
 5. a file called image.pgm will be created, you can use GIMP to view the image
+
+
+arduino_i2c
+--------------
+This example shows how to read the i2c ports using an Arduino. 
+Note that most Arduino hardware does not have enough memory to buffer the thermal image. 80*60*2 = 9600 bytes. Some of the Arm based units will work. 
