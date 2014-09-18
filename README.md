@@ -26,3 +26,8 @@ STM32F3Discovery_ChibiOS
 Download and install ChibiOS_2.6.5 into the same directory first. 
 This example takes the SPI data stream from the Lepton module, buffers it and send it out the USB VCP device. 
 On the PC the binary stream of data can be parsed easily by looking for the 0xdeadbeef header on each frame. 
+
+
+stm32nucleo_401re
+--------------
+This example shows how to read stream photos at the rate of about 1 every 2 seconds from the $10 STM32nucleo 401 RE development board. This example uses the mbed toolchain, an extremely simple to use web based IDE. 
