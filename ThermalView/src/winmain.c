@@ -68,23 +68,37 @@ typedef struct {
 	unsigned char b; 
 } color_triplet;
 
-color_triplet table[256] = {{0,0,0}};
+color_triplet table[1280] = {{0,0,0}};
+unsigned long colors[1280] ;
 
 void generate_pallette(void)
 {
 	int i;
-	int red, green, blue;
+	int NCOLORS=1280;
 
-	for (red = 0; red <= 255; red+= 51) 
+	for(int i = 0; i <= 255; i++) 
 	{
-		for (green = 0; green <= 255; green += 51) 
-		{ 
-			for (blue = 0; blue <= 255; blue+= 51) 
-			{ 
-				table[i].r = red; table[i].g = green; table[i].b = blue; ++i; 
-			}
-	       	} 
-	} 
+	
+		// Red (255,0,0) to yellow (255,255,0)
+		colors[NCOLORS-i] = RGB(255,i,0);
+		// Yellow to green (0,255,0)
+		colors[NCOLORS-(i + 256)] = RGB(255-i,255,0);
+		// Green to cyan (0,255,255)
+		colors[NCOLORS-(i + 512)] = RGB(0,255,i);
+		// cyan to blue (0,0,255)
+		colors[NCOLORS-(i + 768)] = RGB(0,255-i,255);
+
+		//blue to black
+		colors[NCOLORS-(i + 1024)] = RGB(0,0,255-i); // Fades down into black
+	}
+	colors[0] = RGB(0,0,0); //black
+}
+
+void get_color(int rawcolor, color_triplet * color)
+{
+	color->r = rawcolor;
+	color->g = 0;
+	color->b = 0;
 
 }
 
@@ -153,6 +167,43 @@ void norm_image(void)
 
 }
 
+void scale_image(void)
+{
+	int i;
+	int j;
+	int max = 0;
+	int min = 0xffff;
+
+	for(i=0;i<60;i++)
+	{
+		for(j=0;j<80;j++)
+		{
+			if(draw_lepton_image[i][j] > max )
+			{
+				max = draw_lepton_image[i][j];
+			}
+
+			if(draw_lepton_image[i][j] < min )
+			{
+				min = draw_lepton_image[i][j];
+			}
+		}
+	}
+
+	for(i=0;i<60;i++)
+	{
+		for(j=0;j<80;j++)
+		{
+			draw_lepton_image[i][j] -= min;
+
+			draw_lepton_image[i][j] = ( draw_lepton_image[i][j] * 1280) / (max-min);
+
+		}
+	}
+
+
+}
+
 
 
 #define SCALE (4)
@@ -161,6 +212,7 @@ void DrawPixels(HWND hwnd)
 	PAINTSTRUCT ps;
 	RECT r;
 	HBITMAP bitmap;
+	color_triplet drawcolor;
 
 
 	HDC hDC = BeginPaint(hwnd, &ps);
@@ -180,8 +232,12 @@ void DrawPixels(HWND hwnd)
 		for(i=0;i<60;i++)
 		{
 			//SetPixelV(hDCMem,  j, i, RGB(draw_lepton_image[i][j], 0, 0));
-			SetPixelV(hDCMem,  j, i, RGB(draw_lepton_image[i][j], draw_lepton_image[i][j], draw_lepton_image[i][j]));
+			//SetPixelV(hDCMem,  j, i, RGB(draw_lepton_image[i][j], draw_lepton_image[i][j], draw_lepton_image[i][j]));
 			//SetPixelV(hDCMem,  j, i, RGB(table[draw_lepton_image[i][j]].r, table[draw_lepton_image[i][j]].g, table[draw_lepton_image[i][j]].b));
+
+			SetPixelV(hDCMem,  j, i, colors[ (draw_lepton_image[i][j])%1280]);
+			//get_color(draw_lepton_image[i][j], &drawcolor);
+			//SetPixelV(hDCMem,  j, i, RGB(drawcolor.r, drawcolor.g, drawcolor.b));
 		}
 	}
 
@@ -340,7 +396,8 @@ void parse_binary(unsigned char input)
 					//save_pgm_file();
 
 					copy_image();
-					norm_image();
+					//norm_image();
+					scale_image();
 
 					parser_state = 0;
 					request_next_image = 1;
@@ -404,8 +461,8 @@ DWORD WINAPI MyThreadFunction( LPVOID lpParam )
 
 
 	//hComPort = CreateFile(TEXT("COM8:"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	//hComPort = CreateFile(TEXT("COM2:"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	hComPort = CreateFile(TEXT("COM4:"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	hComPort = CreateFile(TEXT("COM2:"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	//hComPort = CreateFile(TEXT("COM4:"), GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 
 	if (!SetupComm(hComPort, 10240, 10240))
 	{
