@@ -31,3 +31,7 @@ On the PC the binary stream of data can be parsed easily by looking for the 0xde
 stm32nucleo_401re
 --------------
 This example shows how to read stream photos at the rate of about 1 every 2 seconds from the $10 STM32nucleo 401 RE development board. This example uses the mbed toolchain, an extremely simple to use web based IDE. 
+
+ThermalView
+--------------
+This super simple win32 example shows how draw the images onto the screen of a windows computer. This software is compiled using MinGW toolchain.  
