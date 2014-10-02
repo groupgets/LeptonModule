@@ -31,7 +31,6 @@ signals:
 private:
 
   QImage myImage;
-  clock_t startClock;
 
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;

@@ -14,7 +14,8 @@ This will compile the application.
 
 In order for the application to run properly, a lepton camera must be attached in a specific way to the SPI, power, and ground pins of the Raspi's GPIO interface.
 
-Lepton's CS and GND pins should be connected to ground.
+Lepton's GND pin should be connected to RasPi's ground.
+Lepton's CS pin should be connected to RasPi's CE1 pin.
 Lepton's MISO pin should be connected to RasPI's MISO pin.
 Lepton's CLK pin should be connected to RasPI's SCLK pin.
 Lepton's VIN pin should be connected to RasPI's 3v3 pin.

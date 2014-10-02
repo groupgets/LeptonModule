@@ -21,33 +21,25 @@ void LeptonThread::run()
 	myImage = QImage(80, 60, QImage::Format_RGB888);
 
 	//open spi port
-	int res = SpiOpenPort(0);
-	qDebug() << "status: " << res;
-
-	//measuring timing
-	int elapsedMicroseconds = 0;
-	clock_t deltaClock;
-	int idealFPS = 15;
+	SpiOpenPort(0);
 
 	while(true) {
-		startClock = clock();
 
 		//read data packets from lepton over SPI
-		//int resets = 0;
-		qDebug() << "reading now";
-		deltaClock = clock();
+		int resets = 0;
 		for(int j=0;j<PACKETS_PER_FRAME;j++) {
 			//if it's a drop packet, reset j to 0, set to -1 so he'll be at 0 again loop
 			read(spi_cs0_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
 			int packetNumber = result[j*PACKET_SIZE+1];
 			if(packetNumber != j) {
 				j = -1;
+				resets += 1;
+				usleep(1000);
 			}
 		}
-		int delta = (clock() - deltaClock)/(CLOCKS_PER_SEC/1000);
-		qDebug() << "done reading: " << delta;
-
-		deltaClock = clock();
+		if(resets >= 30) {
+			qDebug() << "done reading, resets: " << resets;
+		}
 
 		frameBuffer = (uint16_t *)result;
 		int row, column;
@@ -77,10 +69,7 @@ void LeptonThread::run()
 			column = i % PACKET_SIZE_UINT16 - 2;
 			row = i / PACKET_SIZE_UINT16 ;
 		}
-		delta = (clock() - deltaClock)/(CLOCKS_PER_SEC/1000);
-		qDebug() << "processed: " << delta;
 
-		deltaClock = clock();
 		float diff = maxValue - minValue;
 		float scale = 255/diff;
 		QRgb color;
@@ -96,30 +85,8 @@ void LeptonThread::run()
 			myImage.setPixel(column, row, color);
 		}
 
-		delta = (clock() - deltaClock)/(CLOCKS_PER_SEC/1000);
-		qDebug() << "coloring: " << delta;
-
 		//lets emit the signal for update
 		emit updateImage(myImage);
-
-		//old code dealing with sleeping or emitting less frequently
-		//scrapped cause SPI started chugging when we didn't refresh fast enough
-
-		//figure out how long to sleep
-		delta = (clock() - startClock)/(CLOCKS_PER_SEC/1000);
-		int microseconds = delta*1000;
-		int idealMicroseconds = 1000000/idealFPS;
-		//int sleepTime = idealMicroseconds - microseconds;
-		//if(sleepTime > 0) {
-		//	usleep( sleepTime );
-		//}
-	
-		elapsedMicroseconds += microseconds;
-		if(elapsedMicroseconds >= idealMicroseconds) {
-			elapsedMicroseconds -= idealMicroseconds;
-			//emit updateImage(myImage);
-		}
-		qDebug() << "total: " << delta;
 	}
 	
 	//finally, close SPI port just bcuz
