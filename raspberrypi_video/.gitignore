@@ -1,0 +1,5 @@
+*.o
+*.pro
+moc_*
+Makefile
+raspberrypi_video
