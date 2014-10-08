@@ -159,7 +159,7 @@ void norm_image(void)
 		{
 			draw_lepton_image[i][j] -= min;
 
-			draw_lepton_image[i][j] = ( draw_lepton_image[i][j] * 255) / (max-min);
+			draw_lepton_image[i][j] = (( draw_lepton_image[i][j] * 255) / (max-min))+1;
 
 		}
 	}
