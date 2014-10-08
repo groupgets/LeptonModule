@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
+#include <limits.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -50,12 +51,14 @@ static uint16_t delay;
 
 #define VOSPI_FRAME_SIZE (164)
 uint8_t lepton_frame_packet[VOSPI_FRAME_SIZE];
-static int lepton_image[80][80];
+static unsigned int lepton_image[80][80];
 
 static void save_pgm_file(void)
 {
 	int i;
 	int j;
+	unsigned int maxval = 0;
+    unsigned int minval = UINT_MAX;
 
 	FILE *f = fopen("image.pgm", "w");
 	if (f == NULL)
@@ -64,44 +67,40 @@ static void save_pgm_file(void)
 		exit(1);
 	}
 
-	fprintf(f,"P2\n80 60\n255\n");
+	printf("Calculating min/max values for proper scaling...\n");
 	for(i=0;i<60;i++)
 	{
 		for(j=0;j<80;j++)
 		{
-			fprintf(f,"%d ", lepton_image[i][j]);
+			if (lepton_image[i][j] > maxval) {
+				maxval = lepton_image[i][j];
+			}
+			if (lepton_image[i][j] < minval) {
+				minval = lepton_image[i][j];
+			}
 		}
-		printf("\n");
 	}
-	printf("\n\n");
+	printf("maxval = %u\n",maxval);
+	printf("minval = %u\n",minval);
+	
+	fprintf(f,"P2\n80 60\n%u\n",maxval-minval);
+	for(i=0;i<60;i++)
+	{
+		for(j=0;j<80;j++)
+		{
+			fprintf(f,"%d ", lepton_image[i][j] - minval);
+		}
+		fprintf(f,"\n");
+	}
+	fprintf(f,"\n\n");
 
 	fclose(f);
 }
 
-static void print_image(void)
-{
-	int i;
-	int j;
-
-	printf("P2\n80\n60\n255\n");
-	for(i=0;i<60;i++)
-	{
-		for(j=0;j<80;j++)
-		{
-			printf("%d ", lepton_image[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n\n");
-
-
-}
-
-static void transfer(int fd)
+int transfer(int fd)
 {
 	int ret;
 	int i;
-	int j;
 	int frame_number;
 	uint8_t tx[VOSPI_FRAME_SIZE] = {0, };
 	struct spi_ioc_transfer tr = {
@@ -129,18 +128,13 @@ static void transfer(int fd)
 			}
 		}
 	}
-
-	if(frame_number == 59)
-	{
-		print_image();
-	}
+	return frame_number;
 }
 
 int main(int argc, char *argv[])
 {
 	int ret = 0;
 	int fd;
-	int i;
 
 
 	fd = open(device, O_RDWR);
@@ -189,10 +183,7 @@ int main(int argc, char *argv[])
 	printf("bits per word: %d\n", bits);
 	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 
-	for(i=0;i<5000;i++)
-	{
-		transfer(fd);
-	}
+	while(transfer(fd)!=59){}
 
 	close(fd);
 
