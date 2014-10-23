@@ -14,6 +14,8 @@ you have to enable the spi and i2c ports first for this code to work.
 4. to capture an image run "sudo ./a.out"
 5. a file called image.pgm will be created, you can use GIMP to view the image
 
+See the wiki page for more information: https://github.com/PureEngineering/LeptonModule/wiki
+
 
 arduino_i2c
 --------------
