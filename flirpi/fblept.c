@@ -8,8 +8,8 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/types.h>
-#include <linux/spi/spidev.h>
 #include <linux/fb.h>
+#include <string.h>
 
 static void pabort(const char *s)
 {
@@ -25,11 +25,11 @@ static char *fbp = 0;
 #define HT 60
 
 static unsigned short img[HT][80];
-static unsigned char mag = 1;
+static unsigned char mag = 1,xo,yo;
 static unsigned contour = 0;
 static void writefb(void)
 {
-    int x, y, xb, yb, xo, yo;
+    int x, y, xb, yb;
     long int loc = 0;
     int stride = vinfo.bits_per_pixel >> 3;
     unsigned short minval = 0xffff, maxval = 0;
@@ -44,7 +44,7 @@ static void writefb(void)
     //    printf("%d + %d\n", minval, maxval);
 
     for (y = 0; y < HT; y++)
-        for (x = 0; x < 80; x++) {
+        for (x = 0; x < WD; x++) {
 
             int val;
             if (!contour)
@@ -59,37 +59,34 @@ static void writefb(void)
 #define COLOR
 #ifdef COLOR
             switch (val >> 6) {
-            case 0:
-                b = 255;
-                g = 0;
-                r = 255 - (val << 2);
-                break;
-            case 1:
-                r = 0;
-                b = 255 - (val << 2);
-                g = (val << 2);
-                break;
-            case 2:
-                b = 0;
-                g = 255;
-                r = (val << 2);
-                break;
-            case 3:
-                b = 0;
-                r = 255;
-                g = 255 - (val << 2);
-                break;
-            default:
-                break;
+                case 0:
+                    b = 255;
+                    g = 0;
+                    r = 255 - (val << 2);
+                    break;
+                case 1:
+                    r = 0;
+                    b = 255 - (val << 2);
+                    g = (val << 2);
+                    break;
+                case 2:
+                    b = 0;
+                    g = 255;
+                    r = (val << 2);
+                    break;
+                case 3:
+                    b = 0;
+                    r = 255;
+                    g = 255 - (val << 2);
+                    break;
+                default:
+                    break;
             }
 #endif
             unsigned short int t = ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | ((b & 0xf8) >> 3);
 
-            xo = (vinfo.xres - WD * mag) / 2;
-            yo = (vinfo.yres - HT * mag) / 2;
-
             for (yb = 0; yb < mag; yb++) {
-                loc = (x * mag + vinfo.xoffset + xo) * stride + (yb + y * mag + vinfo.yoffset + yo) * finfo.line_length;
+                loc = (x * mag + xo) * stride + (yb + y * mag + yo) * finfo.line_length;
                 for (xb = 0; xb < mag; xb++) {
                     if (vinfo.bits_per_pixel == 32) {
                         *(fbp + loc++) = b;     // Some blue
@@ -123,10 +120,15 @@ int main(int argc, char *argv[])
     fbp = (char *) mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
     if ((int) fbp == -1)
         pabort("Error: failed to map framebuffer device to memory");
-    printf("The framebuffer device was mapped to memory successfully.\n");
+    //printf("The framebuffer device was mapped to memory successfully.\n");
+    memset( fbp, 0, vinfo.xres*vinfo.yres*(vinfo.bits_per_pixel/8));
     mag = vinfo.xres / 80;
     if (vinfo.yres / HT < mag)
         mag = vinfo.yres / HT;
+
+    xo = (vinfo.xres - WD * mag) / 2 + vinfo.xoffset;
+    yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
+printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
     if (leptopen())
         return -7;
     if (argc > 1)
