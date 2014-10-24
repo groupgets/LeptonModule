@@ -21,16 +21,19 @@ static struct fb_var_screeninfo vinfo;
 static struct fb_fix_screeninfo finfo;
 static char *fbp = 0;
 
-static unsigned short img[60][80];
+#define WD 80
+#define HT 60
+
+static unsigned short img[HT][80];
 static unsigned char mag = 1;
 
 static void writefb(void)
 {
-    int x, y, xb, yb;
+    int x, y, xb, yb, xo, yo;
     long int loc = 0;
     int stride = vinfo.bits_per_pixel >> 3;
     unsigned short minval = 0xffff, maxval = 0;
-    for (y = 0; y < 60; y++)
+    for (y = 0; y < HT; y++)
         for (x = 0; x < 80; x++) {
             if (img[y][x] > maxval)
                 maxval = img[y][x];
@@ -40,7 +43,7 @@ static void writefb(void)
     maxval -= minval;           // span
     //    printf("%d + %d\n", minval, maxval);
 
-    for (y = 0; y < 60; y++)
+    for (y = 0; y < HT; y++)
         for (x = 0; x < 80; x++) {
 
             int val = ((img[y][x] - minval) * 255) / (maxval);
@@ -78,8 +81,11 @@ static void writefb(void)
 #endif
             unsigned short int t = ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | ((b & 0xf8) >> 3);
 
+xo = (vinfo.xres - WD * mag) / 2;
+yo = (vinfo.yres - HT * mag) / 2;
+
             for (yb = 0; yb < mag; yb++) {
-                loc = (x * mag + vinfo.xoffset) * stride + (yb + y * mag + vinfo.yoffset) * finfo.line_length;
+                loc = (x * mag + vinfo.xoffset + xo) * stride + (yb + y * mag + vinfo.yoffset + yo) * finfo.line_length;
                 for (xb = 0; xb < mag; xb++) {
                     if (vinfo.bits_per_pixel == 32) {
                         *(fbp + loc++) = b;     // Some blue
@@ -114,15 +120,15 @@ int main(int argc, char *argv[])
         pabort("Error: failed to map framebuffer device to memory");
     printf("The framebuffer device was mapped to memory successfully.\n");
     mag = vinfo.xres / 80;
-    if (vinfo.yres / 60 < mag)
-        mag = vinfo.yres / 60;
+    if (vinfo.yres / HT < mag)
+        mag = vinfo.yres / HT;
     if (leptopen())
         return -7;
     for (;;) {
         if (leptget((unsigned short *)img))
             return -8;
         writefb();
-        usleep(125000);
+        //usleep(125000);
     }
     leptclose();
     munmap(fbp, screensize);
