@@ -26,7 +26,7 @@ static char *fbp = 0;
 
 static unsigned short img[HT][80];
 static unsigned char mag = 1;
-
+static unsigned contour = 0;
 static void writefb(void)
 {
     int x, y, xb, yb, xo, yo;
@@ -46,7 +46,11 @@ static void writefb(void)
     for (y = 0; y < HT; y++)
         for (x = 0; x < 80; x++) {
 
-            int val = ((img[y][x] - minval) * 255) / (maxval);
+            int val;
+            if (!contour)
+                val = ((img[y][x] - minval) * 255) / (maxval);
+            else
+                val = img[y][x] << 2;   // - minval;
             val &= 0xff;
 
             int b = val;
@@ -81,8 +85,8 @@ static void writefb(void)
 #endif
             unsigned short int t = ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | ((b & 0xf8) >> 3);
 
-xo = (vinfo.xres - WD * mag) / 2;
-yo = (vinfo.yres - HT * mag) / 2;
+            xo = (vinfo.xres - WD * mag) / 2;
+            yo = (vinfo.yres - HT * mag) / 2;
 
             for (yb = 0; yb < mag; yb++) {
                 loc = (x * mag + vinfo.xoffset + xo) * stride + (yb + y * mag + vinfo.yoffset + yo) * finfo.line_length;
@@ -101,6 +105,7 @@ yo = (vinfo.yres - HT * mag) / 2;
             }
         }
 }
+
 #include "leptsci.h"
 
 int main(int argc, char *argv[])
@@ -124,8 +129,10 @@ int main(int argc, char *argv[])
         mag = vinfo.yres / HT;
     if (leptopen())
         return -7;
+    if (argc > 1)
+        contour = 1;
     for (;;) {
-        if (leptget((unsigned short *)img))
+        if (leptget((unsigned short *) img))
             return -8;
         writefb();
         //usleep(125000);
