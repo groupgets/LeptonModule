@@ -25,9 +25,6 @@ void LeptonThread::run()
 	//open spi port
 	SpiOpenPort(0);
 
-	int ffcMax = 60*2*FPS;
-	int ffcTimer = ffcMax - 1*FPS;
-
 	while(true) {
 
 		//read data packets from lepton over SPI
@@ -98,13 +95,13 @@ void LeptonThread::run()
 		//lets emit the signal for update
 		emit updateImage(myImage);
 
-		ffcTimer += 1;
-		if(ffcTimer >= ffcMax) {
-			ffcTimer = 0;
-			lepton_perform_ffc();
-		}
 	}
 	
 	//finally, close SPI port just bcuz
 	SpiClosePort(0);
+}
+
+void LeptonThread::performFFC() {
+	//perform FFC
+	lepton_perform_ffc();
 }

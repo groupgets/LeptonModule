@@ -3,3 +3,5 @@
 moc_*
 Makefile
 raspberrypi_video
+!raspberrypi_video.pro
+.DS_Store
