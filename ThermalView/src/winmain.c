@@ -196,7 +196,7 @@ void scale_image(void)
 		{
 			draw_lepton_image[i][j] -= min;
 
-			draw_lepton_image[i][j] = ( draw_lepton_image[i][j] * 1280) / (max-min);
+			draw_lepton_image[i][j] = (( draw_lepton_image[i][j] * 1280) / (max-min))+1;
 
 		}
 	}
