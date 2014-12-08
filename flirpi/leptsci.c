@@ -7,14 +7,14 @@
 #include <stdint.h>
 
 static uint8_t bits = 8;
-static uint32_t speed = 16000000;       //16
+static uint32_t speed = 10000000;       //16
 static uint16_t delay = 0;
 static int leptfd;
 
 int leptopen()
 {
     uint8_t mode = 0;
-    const char device[] = "/dev/spidev0.0";
+    const char device[] = "/dev/spidev0.1";
     leptfd = open(device, O_RDWR);
     if (leptfd < 0)
         return -1;
@@ -37,13 +37,14 @@ void leptclose()
 {
     close(leptfd);
 }
-
+#include <string.h>
 int leptget(unsigned short *img)
 {
 #define VOSPI_FRAME_SIZE (164)
     int row = -1;
     int hiccup = 0;
     int notready = 0;
+    memset( img, 8192>>8, 80*60*2);
     do {
 
         uint8_t lepacket[VOSPI_FRAME_SIZE];
@@ -85,7 +86,6 @@ int leptget(unsigned short *img)
                 //leptopen();
                 fprintf(stderr, "!\n");
             }
-            fprintf(stderr, "[%d]", row);
             continue;
         }
         hiccup = 0;

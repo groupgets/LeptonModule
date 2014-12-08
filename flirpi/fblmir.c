@@ -24,8 +24,6 @@ static char *fbp = 0;
 #define WD 80
 #define HT 60
 
-#include "ironbow.c"
-
 static unsigned short img[HT][80];
 static unsigned char mag = 1,xo,yo;
 static unsigned contour = 0;
@@ -50,15 +48,15 @@ static void writefb(void)
 
             int val;
             if (!contour)
-                val = ((img[y][x] - minval) * 255) / (maxval);
+                val = ((img[HT-1-y][WD-1-x] - minval) * 255) / (maxval);
             else
-                val = img[y][x] << 2;   // - minval;
+                val = img[HT-1-y][WD-1-x] << 2;   // - minval;
             val &= 0xff;
 
-            int b = ironbow[val][2];
-            int r = ironbow[val][0];
-            int g = ironbow[val][1];
-#define COLORX
+            int b = val;
+            int r = val;
+            int g = val;
+#define COLOR
 #ifdef COLOR
             switch (val >> 6) {
                 case 0:
@@ -112,8 +110,6 @@ int main(int argc, char *argv[])
     int fbfd = 0;
     long int screensize = 0;
     fbfd = open("/dev/fb1", O_RDWR);
-    if (fbfd == -1)
-        fbfd = open("/dev/fb0", O_RDWR);
     if (fbfd == -1)
         pabort("Error: cannot open framebuffer device");
     if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1)
