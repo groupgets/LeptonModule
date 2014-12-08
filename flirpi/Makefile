@@ -7,6 +7,8 @@ leptgraypng: leptgraypng.c leptsci.o
 
 leptbmp: leptbmp.c leptsci.o
 
+fblmir: fblmir.c leptsci.o
+
 fblept: fblept.c leptsci.o
 
 leptsci.o: leptsci.c
