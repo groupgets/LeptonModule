@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 static uint8_t bits = 8;
-static uint32_t speed = 10000000;       //16
+static uint32_t speed = 15000000;       //16
 static uint16_t delay = 0;
 static int leptfd;
 
@@ -40,19 +40,21 @@ void leptclose()
 #include <string.h>
 int leptget(unsigned short *img)
 {
-#define VOSPI_FRAME_SIZE (164)
-    int row = -1;
-    int hiccup = 0;
-    int notready = 0;
+#define VOSPISIZ (164)
+#define BUFMAX (4096/VOSPISIZ) //24
     memset( img, 8192>>8, 80*60*2);
-    do {
-
-        uint8_t lepacket[VOSPI_FRAME_SIZE];
-        uint8_t tx[VOSPI_FRAME_SIZE] = { 0, };
+    int row = -1;
+    while( row != 59 ) {
+        int cnt;
+        uint8_t lepacket[VOSPISIZ * BUFMAX], *lpp;
+        uint8_t tx[VOSPISIZ * BUFMAX] = { 0, };
+        int maxpkts = row > 0 ? 59 - row : 60;
+        if( maxpkts > BUFMAX )
+            maxpkts = BUFMAX;
         struct spi_ioc_transfer tr = {
             .tx_buf = (unsigned long) tx,
             .rx_buf = (unsigned long) lepacket,
-            .len = VOSPI_FRAME_SIZE,
+            .len = VOSPISIZ * maxpkts,
             .delay_usecs = delay,
             .speed_hz = speed,
             .bits_per_word = bits,
@@ -61,38 +63,25 @@ int leptget(unsigned short *img)
         int i;
         i = ioctl(leptfd, SPI_IOC_MESSAGE(1), &tr);
         if (i < 1) {
-            fprintf(stderr, "1");
+            fprintf(stderr, "SPI_ERR");
             continue;
         }
-        //return -1;
-        if (((lepacket[0] & 0xf) == 0x0f)) {
-            //fprintf( stderr, "." );
-            if (!notready)
-                usleep(25000);  // wait for next frame
-            else
-                usleep(1000);
-            notready++;
-            continue;
-        }
-        //if( notready ) fprintf( stderr, "<%d>", notready );
-        notready = 0;
-        //return -2;
-        row = lepacket[1];
-        hiccup++;
-        if (row >= 60) {
-            if (hiccup > 8) {
-                //leptclose();
-                usleep(125000);
-                //leptopen();
-                fprintf(stderr, "!\n");
+        for( lpp = lepacket, cnt = 0; cnt < maxpkts; cnt++, lpp += VOSPISIZ ) {
+            if (((lpp[0] & 0xf) == 0x0f)) 
+                continue;
+            row = lpp[1];
+            if (row >= 60) {
+                row = -1;
+                continue;
+                break;
             }
-            continue;
+            for (i = 0; i < 80; i++)
+                img[row * 80 + i]
+                    = (lpp[2 * i + 4] << 8) | lpp[2 * i + 5];
+            if( row == 59 )
+                break;
         }
-        hiccup = 0;
-        for (i = 0; i < 80; i++)
-            img[row * 80 + i]
-              = (lepacket[2 * i + 4] << 8) | lepacket[2 * i + 5];
-        //printf ("%d ",img[row*81]);
-    } while (row != 59);
+        //fprintf( stderr, "R:%d C:%d\n", row, cnt );
+    }
     return 0;
 }
