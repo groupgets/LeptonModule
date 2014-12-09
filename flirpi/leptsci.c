@@ -11,10 +11,10 @@ static uint32_t speed = 15000000;       //16
 static uint16_t delay = 0;
 static int leptfd;
 
-int leptopen()
+int leptopen(int port)
 {
     uint8_t mode = 0;
-    const char device[] = "/dev/spidev0.1";
+    const char *device = port ? "/dev/spidev0.1" : "/dev/spidev0.0";
     leptfd = open(device, O_RDWR);
     if (leptfd < 0)
         return -1;

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     for (y = 0; y < HT; y++)
         rps[y] = image + WD * 2 * y;
-    if (leptopen() || leptget(simage))
+    if (leptopen(1) || leptget(simage))
         return -1;
     leptclose();
 
