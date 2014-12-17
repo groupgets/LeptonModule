@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 static uint8_t bits = 8;
-static uint32_t speed = 15000000;       //16
+static uint32_t speed = 10000000;       //16
 static uint16_t delay = 0;
 static int leptfd;
 

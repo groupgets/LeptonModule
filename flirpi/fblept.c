@@ -21,7 +21,7 @@ static char *fbp = 0;
 #include "ironbow.c"
 
 static unsigned short img[HT][80];
-static unsigned char mag = 1,xo,yo;
+static unsigned char mag = 1, xo, yo;
 static void writefb(int pal, int contour, int hmirror, int vmirror)
 {
     int x, y, xb, yb;
@@ -40,52 +40,52 @@ static void writefb(int pal, int contour, int hmirror, int vmirror)
 
     for (y = 0; y < HT; y++)
         for (x = 0; x < WD; x++) {
-            int ym = vmirror? HT - 1 - y : y;
-            int xm = hmirror? WD - 1 - x : x;
+            int ym = vmirror ? HT - 1 - y : y;
+            int xm = hmirror ? WD - 1 - x : x;
             unsigned short imgval = img[ym][xm];
             int val;
             if (!contour)
                 val = ((imgval - minval) * 255) / (maxval);
             else
-                val = imgval << 2;   // - minval;
+                val = imgval << 2;      // - minval;
             val &= 0xff;
 
-            int r,b,g;
-            switch(pal) {
+            int r, b, g;
+            switch (pal) {
+            case 0:
+                b = ironbow[val][2];
+                r = ironbow[val][0];
+                g = ironbow[val][1];
+                break;
+            case 1:
+                switch (val >> 6) {
                 case 0:
-                    b = ironbow[val][2];
-                    r = ironbow[val][0];
-                    g = ironbow[val][1];
+                    b = 255;
+                    g = 0;
+                    r = 255 - (val << 2);
                     break;
                 case 1:
-                    switch (val >> 6) {
-                        case 0:
-                            b = 255;
-                            g = 0;
-                            r = 255 - (val << 2);
-                            break;
-                        case 1:
-                            r = 0;
-                            b = 255 - (val << 2);
-                            g = (val << 2);
-                            break;
-                        case 2:
-                            b = 0;
-                            g = 255;
-                            r = (val << 2);
-                            break;
-                        case 3:
-                            b = 0;
-                            r = 255;
-                            g = 255 - (val << 2);
-                            break;
-                        default:
-                            break;
-                    }
+                    r = 0;
+                    b = 255 - (val << 2);
+                    g = (val << 2);
                     break;
-                default: // grayscale
-                    b=r=g= val;
+                case 2:
+                    b = 0;
+                    g = 255;
+                    r = (val << 2);
                     break;
+                case 3:
+                    b = 0;
+                    r = 255;
+                    g = 255 - (val << 2);
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:           // grayscale
+                b = r = g = val;
+                break;
             }
             unsigned short int t = ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | ((b & 0xf8) >> 3);
 
@@ -113,7 +113,41 @@ int main(int argc, char *argv[])
 {
     int fbfd = 0;
     long int screensize = 0;
-    int pal=0,cont=0,hmir=1,vmir=0,spiport=1;
+    int pal = 0, cont = 0, hmir = 0, vmir = 0, spiport = 0;
+
+    int argp = 0;
+    char *c;
+    while (++argp < argc) {
+        c = argv[argp];
+        while (*c) {
+            switch (*c) {
+            case 'v':
+                vmir = 1;
+                break;
+            case 'h':
+                hmir = 1;
+                break;
+            case 'c':
+                cont = 1;
+                break;
+            case 'm':
+                pal = 2;
+                break;
+            case 'n':
+                pal = 1;
+                break;
+            case '1':
+                spiport = 1;
+                break;
+            default:
+                fprintf(stderr,
+                  "1 - use spiport 1\n"
+                  "n - normal color palette\n" "m - monochrome\n" "c - contour\n" "h - flip horiz\n" "v - flip vert\n");
+                return 1;
+            }
+            c++;
+        }
+    }
 
     fbfd = open("/dev/fb1", O_RDWR);
     if (fbfd == -1)
@@ -129,7 +163,7 @@ int main(int argc, char *argv[])
     fbp = (char *) mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
     if ((int) fbp == -1)
         return -4;
-    memset( fbp, 0, vinfo.xres*vinfo.yres*(vinfo.bits_per_pixel/8));
+    memset(fbp, 0, vinfo.xres * vinfo.yres * (vinfo.bits_per_pixel / 8));
     mag = vinfo.xres / 80;
     if (vinfo.yres / HT < mag)
         mag = vinfo.yres / HT;
@@ -137,14 +171,14 @@ int main(int argc, char *argv[])
     xo = (vinfo.xres - WD * mag) / 2 + vinfo.xoffset;
     yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
 
-    printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
+    printf("%d,%d,%d,%d\n", xo, yo, 80 * mag, 60 * mag);
 
     if (leptopen(spiport))
         return -7;
     for (;;) {
         if (leptget((unsigned short *) img))
             return -8;
-        writefb(pal,cont,hmir,vmir);
+        writefb(pal, cont, hmir, vmir);
     }
     leptclose();
     munmap(fbp, screensize);
