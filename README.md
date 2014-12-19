@@ -2,6 +2,9 @@ LeptonModule
 ============
 The FLIR Lepton™ is the most compact longwave infrared (LWIR) sensor available as an OEM product. It packs a resolution of 80 × 60 pixels into a camera body that is smaller than a dime. This revolutionary camera core is poised to equip a new generation of mobile and handheld devices, as well as small fixed-mount camera systems, with thermal imaging capabilities never seen before.Lepton contains a breakthrough lens fabricated in wafer form, along with a microbolometer focal plane array (FPA) and advanced thermal image processing. 
 
+More Information
+http://www.pureengineering.com/projects/lepton
+
 
 raspberrypi_capture
 --------------
