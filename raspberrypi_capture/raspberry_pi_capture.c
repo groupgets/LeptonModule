@@ -65,8 +65,11 @@ static void save_pgm_file(void)
 	do {
 		sprintf(image_name, "image_%.2d.pgm", image_index);
 		image_index += 1;
-		if (image_index >= 100)
+		if (image_index >= 100) 
+		{
+			image_index = 0;
 			break;
+		}
 
 	} while (access(image_name, F_OK) == 0);
 
