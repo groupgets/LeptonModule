@@ -40,3 +40,7 @@ This example shows how to read stream photos at the rate of about 1 every 2 seco
 ThermalView
 --------------
 This super simple win32 example shows how draw the images onto the screen of a windows computer. This software is compiled using MinGW toolchain.  
+
+edison_capture
+--------------
+This example shows how to capture a still image from the lepton using Intel Edison.
