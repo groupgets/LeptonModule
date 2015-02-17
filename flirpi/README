@@ -8,6 +8,15 @@ leptsci.c is the code to access the flir module over SCI and fill an image buffe
 
 (Note: there seems to be an occasional hiccup with the SCI, maybe it is just my jumper cables or something, but it occasionally gets out of sync, so there is some experimental code to address this)
 
+leptcam is work in progress, but using the V4L2 loopback module which must be loaded - it may be in your distro or is avaialble as source at:
+	git clone https://github.com/umlaeute/v4l2loopback
+This will create a new /dev/videoN device.
+it will eventually turn the Lepton into a video-for-linux-2 device.
+Right now, when run in the background, e.g.
+	leptcam /dev/videoN & # replace N with the V4L2loopback device number
+it just displays colored squares with
+	vlc v4l2:///dev/videoN # replace N with the V4L2loopback device number
+
 fblept will display a false color image to the framebuffer (command line normally), updating about 10x/sec.  Add "-c" to see a "contour" version that should show more detail in high dynamic range (e.g. a stove and refrigerator).
 
 leptbmp will write out a BMP with HTTP header.  Most desktop browsers understand bmp, so you can animate by just including it via CGI in an <img src="getflir.sh"...> tag and with a meta-refresh or javascript it will continually update

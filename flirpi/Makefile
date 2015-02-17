@@ -1,6 +1,9 @@
 CFLAGS = -Wall
 
-all: leptbmp fblept leptgraypng
+all: leptbmp fblept leptgraypng leptcam
+
+leptcam: leptcam.o
+	gcc -o leptcam leptcam.c leptsci.o -lpthread -Wall
 
 leptgraypng: leptgraypng.c leptsci.o
 	gcc -o leptgraypng leptgraypng.c leptsci.o -lpng -Wall
