@@ -58,9 +58,22 @@ static void save_pgm_file(void)
 	int i;
 	int j;
 	unsigned int maxval = 0;
-    unsigned int minval = UINT_MAX;
+	unsigned int minval = UINT_MAX;
+	char image_name[32];
+	int image_index = 0;
 
-	FILE *f = fopen("image.pgm", "w");
+	do {
+		sprintf(image_name, "IMG_%.4d.pgm", image_index);
+		image_index += 1;
+		if (image_index > 9999) 
+		{
+			image_index = 0;
+			break;
+		}
+
+	} while (access(image_name, F_OK) == 0);
+
+	FILE *f = fopen(image_name, "w");
 	if (f == NULL)
 	{
 		printf("Error opening file!\n");
