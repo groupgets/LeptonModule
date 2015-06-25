@@ -6,6 +6,13 @@ More Information
 http://www.pureengineering.com/projects/lepton
 
 
+beagleboneblack_video
+--------------
+This example is for the Beagle Bone Black board and runs a basic video feed.
+Requires the device's SPI0 tree to be exported to a slot before running.
+Steps are outlined within this directory.
+
+
 raspberrypi_capture
 --------------
 This is for the raspberry pi, 
