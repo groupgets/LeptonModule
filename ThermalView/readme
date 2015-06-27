@@ -1,0 +1,10 @@
+
+ThermalVew is a program used to read seial data from the stm32nucleo_401re example code. 
+
+The program uses the MingGW toolchain for compiling the code.  http://www.mingw.org/
+once the toolchain has been installed and added to the path, make all can be used to compile to an exe. 
+
+The program has a hardcoded serial port, it needs to be modified to change the serial port com port. 
+
+
+some issues:  the program needs an obj folder for the compiled object code be compiled, so if you see an issue, create a folder called obj
