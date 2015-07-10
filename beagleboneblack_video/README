@@ -19,15 +19,17 @@ Steps to setup:
 
 3.	Setup breadboard and wiring to BeagleBone
  - Insert the Lepton into the breakout board with the black triangle on the faceplate being on bottom right corner. 
- - Attach breakout board to the breadboard.
+ - Attach breakout board to the breadboard (you can skip this step if you wanted to directly wire the breakout board to the beaglebone).
  - Go to the following link to see the pinout of the BeagleBone that will be configured after the completion of step 7.
-   - http://elinux.org/images/b/bf/2_SPI_Ports.PNG
- - Wire the breadboard to the BeagleBone with the following connections:
-   - CS to pin 20
-    - MISO to pin 21
-    - CLK to pin 22
-    - GND to pin 1
-    - VIN to pin 3
+   - http://beagleboard.org/static/images/cape-headers.png
+ - Wire the Lepton to the BeagleBone with the following connections:
+   - CS to pin 17 (SPI0_CS0)
+    - MISO to pin 21 (SPI_D0)
+    - CLK to pin 22 (SPI0_CLK)
+    - GND to pin 1 (DGND)
+    - VIN to pin 3 (VDD_3V3)
+    - SDA to pin 20 (I2C2_SDA)
+    - SCL to pin 19 (I2C2_SCL)
 
 
 4.	Connect 5V Power Cable to BeagleBone. 
@@ -51,18 +53,17 @@ Steps to setup:
  - git clone this repo to your machine
 
 9. Run the demo by entering the following commands exactly as they appear
- - cd into the LeptonModule directory
- - cd into bbb_video
- - cd into leptonSDKEmb32PUB
+ - cd LeptonModule
+ - cd beagleboneblack_video
+ - cd leptonSDKEmb32PUB
  - make
  - cd ..
  - qmake && make
  - ./bbb
- - **NOTE:** If you’d like to perform I2C functionality, you’ll need to restart your device, configure the device tree overlay and export as outlined in step 7. 
  - Your demo should be running and a video feed should be appearing on your monitor!
 
 10.	Troubleshooting
- - If the demo won't run, remove the power and ground wires and reconnect it to test again.
+ - If the demo won't run, disattach and reattach the Lepton.
    - **IMPORTANT NOTE:** Remember to remove power first and then ground to power off. Reattach ground first and then power to power on.
 
 Parts Needed:
