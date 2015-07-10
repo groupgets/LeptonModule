@@ -1,8 +1,8 @@
 /*******************************************************************************
 **
-**    File NAME: jova_I2C.h
+**    File NAME: raspi_I2C.h
 **
-**      AUTHOR:  Hart Thomson
+**      AUTHOR:  Joseph Colicchio
 **
 **      CREATED: 9/25/2012
 **  
@@ -10,7 +10,7 @@
 **
 **      HISTORY:  9/25/2012 HT - Initial Draft 
 **
-**      Copyright 2011,2012,2013 FLIR Systems - Commercial Vision Systems
+**      Copyright 2011,2012,2013,2014,2015 FLIR Systems - Commercial Vision Systems
 **      All rights reserved.
 **
 **      Proprietary - Company Only.
@@ -24,8 +24,8 @@
 **      transfer to foreign persons or parties and for uses otherwise prohibited. 
 **
 *******************************************************************************/
-#ifndef _JOVA_I2C_H_ 
-    #define _JOVA_I2C_H_
+#ifndef _RASPI_I2C_H_ 
+    #define _RASPI_I2C_H_
 
     #ifdef __cplusplus
 extern "C"
@@ -99,5 +99,5 @@ extern "C"
 }
     #endif
 
-#endif  /* _JOVA_I2C_H_ */
+#endif  /* _RASPI_I2C_H_ */
 

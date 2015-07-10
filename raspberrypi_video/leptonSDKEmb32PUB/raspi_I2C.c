@@ -1,17 +1,17 @@
 /*******************************************************************************
 **
-**    File NAME: jova_I2C.c
+**    File NAME: raspi_I2C.c
 **
-**      AUTHOR:  Hart Thomson
+**      AUTHOR:  Joseph Colicchio
 **
 **      CREATED: 9/25/2012
 **  
-**      DESCRIPTION: Lepton Device-Specific Driver for the JOVA
+**      DESCRIPTION: Lepton Device-Specific Driver for the Raspberry PI
 **                   Master I2C
 **
 **      HISTORY:  9/25/2012 HT - Initial Draft 
 **
-** Copyright 2010, 2011, 2012, 2013 FLIR Systems - Commercial Vision Systems
+** Copyright 2010, 2011, 2012, 2013, 2014, 2014 FLIR Systems - Commercial Vision Systems
 **
 **  All rights reserved.
 **
