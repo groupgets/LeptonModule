@@ -18,7 +18,7 @@ $(TARGET) : ${OBJS}
 	${CC} -o "$@" ${OBJS} ${LDFLAGS}
 
 clean :
-	rm -f $(TARGET) $(OBJ)
+	rm -f $(TARGET) $(OBJS)
 
 obj/%.o : src/%.c ${HEADERS}
 	${CC} ${CFLAGS} ${INCLUDE_DIRS} -c $< -o $@
