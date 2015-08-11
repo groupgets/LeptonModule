@@ -4,7 +4,7 @@ The program uses the MingGW toolchain for compiling the code. You can obtain a s
 
 Install the toolchain and add the bin directory to your path, e.g., PATH=C:\MinGW\bin;%PATH%
 
-Run Make (mingw32-make.exe) to build the code.
+Run Make (mingw32-make.exe) to build the code. Use the "clean" target to clean before building.
 
 The program has a hardcoded serial (COM) port - you will need to update this accordingly before compiling.
 
