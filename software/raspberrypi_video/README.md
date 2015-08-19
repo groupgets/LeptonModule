@@ -12,6 +12,8 @@ make sdkclean && make distclean
 
 If you wish to run this application without using sudo, you should add the user "pi" to the usergroup "i2c".
 
+----
+
 In order for the application to run properly, a Lepton camera must be attached in a specific way to the SPI, power, and ground pins of the Raspi's GPIO interface, as well as the I2C SDA/SCL pins:
 
 Lepton's GND pin should be connected to RasPi's ground.
