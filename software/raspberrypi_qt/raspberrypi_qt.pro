@@ -1,13 +1,22 @@
+
 TEMPLATE = app
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = raspberrypi_video
+TARGET =
 DEPENDPATH += .
 INCLUDEPATH += .
 
-# Input
-HEADERS += LeptonThread.h mainwindow.h
-SOURCES += LeptonThread.cpp main.cpp mainwindow.cpp
+DESTDIR=.
+MOC_DIR=gen_mocs
+OBJECTS_DIR=gen_objs
 
-# unix: LIBS += -LleptonSDKEmb32PUB/Debug -lLEPTON_SDK
+HEADERS += *.h
+
+SOURCES += *.cpp
+
+unix:LIBS += -LleptonSDKEmb32PUB/Debug -lLEPTON_SDK
+
+unix:QMAKE_CLEAN += -r $(OBJECTS_DIR)
+
+
