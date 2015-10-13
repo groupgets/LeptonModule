@@ -13,6 +13,20 @@
 #include <linux/videodev2.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include <stdint.h>
+
+#include "Palettes.h"
+#include "SPI.h"
+#include "Lepton_I2C.h"
+
+#define PACKET_SIZE 164
+#define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
+#define PACKETS_PER_FRAME 60
+#define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
+#define FPS 27;
 
 static char const *v4l2dev = "/dev/video1";
 static int v4l2sink = -1;
@@ -21,35 +35,86 @@ static int height = 60;        //480;    // Default for Flash
 static char *vidsendbuf = NULL;
 static int vidsendsiz = 0;
 
-static void init_device() {
+static int resets = 0;
+static uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
+static uint16_t *frameBuffer;
 
+static void init_device() {
+    SpiOpenPort(0);
 }
 
 static void grab_lepton() {
 
+    resets = 0;
+    for (int j = 0; j < PACKETS_PER_FRAME; j++) {
+        read(spi_cs0_fd, result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
+        int packetNumber = result[j * PACKET_SIZE + 1];
+        if (packetNumber != j) {
+            j = -1;
+            resets += 1;
+            usleep(1000);
+            if (resets == 750) {
+                SpiClosePort(0);
+                usleep(750000);
+                SpiOpenPort(0);
+            }
+        }
+    }
+    if (resets >= 30) {
+        fprintf( stderr, "done reading, resets: \n" );
+    }
+
+    frameBuffer = (uint16_t *)result;
+    int row, column;
+    uint16_t value;
+    uint16_t minValue = 65535;
+    uint16_t maxValue = 0;
+
+    for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
+        if (i % PACKET_SIZE_UINT16 < 2) {
+            continue;
+        }
+
+        int temp = result[i * 2];
+        result[i * 2] = result[i * 2 + 1];
+        result[i * 2 + 1] = temp;
+
+        value = frameBuffer[i];
+        if (value > maxValue) {
+            maxValue = value;
+        }
+        if (value < minValue) {
+            minValue = value;
+        }
+        column = i % PACKET_SIZE_UINT16 - 2;
+        row = i / PACKET_SIZE_UINT16;
+    }
+
+    float diff = maxValue - minValue;
+    float scale = 255 / diff;
+    memset(vidsendbuf, 0, 3);
+    memcpy(vidsendbuf + 3, vidsendbuf, vidsendsiz - 3);
+    for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
+        if (i % PACKET_SIZE_UINT16 < 2) {
+            continue;
+        }
+        value = (frameBuffer[i] - minValue) * scale;
+        const int *colormap = colormap_ironblack;
+        vidsendbuf[i * 3] = colormap[3 * value];
+        vidsendbuf[i * 3 + 1] = colormap[3 * value + 1];
+        vidsendbuf[i * 3 + 2] = colormap[3 * value + 2];
+    }
+
+    /*
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     memset( vidsendbuf, 0, 3);
-    switch( ts.tv_sec & 3 ) {
-    case 0:
-        vidsendbuf[0] = 255;
-        break;
-    case 1:
-        vidsendbuf[0] = 255;
-        vidsendbuf[1] = 255;
-        break;
-    case 2:
-        vidsendbuf[1] = 255;
-        break;
-    case 3:
-        vidsendbuf[2] = 255;
-        break;
-    }
     memcpy( vidsendbuf+3, vidsendbuf, vidsendsiz-3 );
+    */
 }
 
 static void stop_device() {
-
+    SpiClosePort(0);
 }
 
 static void open_vpipe()
