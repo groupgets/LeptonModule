@@ -92,8 +92,6 @@ static void grab_frame() {
 
     float diff = maxValue - minValue;
     float scale = 255 / diff;
-    memset(vidsendbuf, 0, 3);
-    memcpy(vidsendbuf + 3, vidsendbuf, vidsendsiz - 3);
     for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
         if (i % PACKET_SIZE_UINT16 < 2) {
             continue;
@@ -103,8 +101,8 @@ static void grab_frame() {
         column = (i % PACKET_SIZE_UINT16) - 2;
         row = i / PACKET_SIZE_UINT16;
 
+        // Set video buffer pixel to scaled colormap value
         int idx = row * width * 3 + column * 3;
-
         vidsendbuf[idx + 0] = colormap[3 * value];
         vidsendbuf[idx + 1] = colormap[3 * value + 1];
         vidsendbuf[idx + 2] = colormap[3 * value + 2];
