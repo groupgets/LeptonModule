@@ -43,7 +43,7 @@ static void init_device() {
     SpiOpenPort(0);
 }
 
-static void grab_lepton() {
+static void grab_frame() {
 
     resets = 0;
     for (int j = 0; j < PACKETS_PER_FRAME; j++) {
@@ -100,9 +100,14 @@ static void grab_lepton() {
         }
         value = (frameBuffer[i] - minValue) * scale;
         const int *colormap = colormap_ironblack;
-        vidsendbuf[i * 3] = colormap[3 * value];
-        vidsendbuf[i * 3 + 1] = colormap[3 * value + 1];
-        vidsendbuf[i * 3 + 2] = colormap[3 * value + 2];
+        column = (i % PACKET_SIZE_UINT16) - 2;
+        row = i / PACKET_SIZE_UINT16;
+
+        int idx = row * width * 3 + column * 3;
+
+        vidsendbuf[idx + 0] = colormap[3 * value];
+        vidsendbuf[idx + 1] = colormap[3 * value + 1];
+        vidsendbuf[idx + 2] = colormap[3 * value + 2];
     }
 
     /*
@@ -146,6 +151,7 @@ static pthread_t sender;
 static sem_t lock1,lock2;
 static void *sendvid(void *v)
 {
+    (void)v;
     for (;;) {
         sem_wait(&lock1);
         if (vidsendsiz != write(v4l2sink, vidsendbuf, vidsendsiz))
@@ -179,7 +185,7 @@ int main(int argc, char **argv)
         // setup source
         init_device(); // open and setup SPI
         for (;;) {
-            grab_lepton();
+            grab_frame();
             // push it out
             sem_post(&lock1);
             clock_gettime(CLOCK_REALTIME, &ts);

@@ -5,7 +5,13 @@ CFLAGS        = -pipe -O2 -Wall -W -D_REENTRANT -lpthread -lLEPTON_SDK -L/usr/li
 CXXFLAGS      = -pipe -O2 -Wall -W -D_REENTRANT -lpthread -lLEPTON_SDK -L/usr/lib/arm-linux-gnueabihf -L../raspberrypi_libs/leptonSDKEmb32PUB/Debug
 INCPATH = -I. -I../raspberrypi_libs 
 
-all: leptsci.o SPI.o Lepton_I2C.o Palettes.o v4l2lepton
+all: sdk leptsci.o SPI.o Lepton_I2C.o Palettes.o v4l2lepton
+
+sdk:
+	make -C ../raspberrypi_libs/leptonSDKEmb32PUB
+
+sdkclean:
+	make -C ../raspberrypi_libs/leptonSDKEmb32PUB clean
 
 Palettes.o: Palettes.cpp Palettes.h
 	${CXX} -c ${CXXFLAGS} ${INCPATH} -o Palettes.o Palettes.cpp
