@@ -52,3 +52,8 @@ This super simple win32 example shows how draw the images onto the screen of a w
 edison_capture
 --------------
 This example shows how to capture a still image from the lepton using Intel Edison.
+
+MbedLPC1768Lepton
+--------------
+This example uses the Mbed frame work to read from the Lepton camera, The example is the LPC1768, though any mbed with the correct hardware, spi and usb serial out, will work. An efficient software implementation, it will send at 5FPS. Suggested improvement would use the DMA available on the mbed (platform dependant).
+There is also a python script that reads this, the image is headed with 0xDEADBEEF like the stm32nucleo version. The image is presented as a colour mapped image where the min and max colour can be changed by clicking with the right and left mouse buttons on the points of interest in the image. The image is upscaled for visability, and an FPS readout is given.
