@@ -51,7 +51,6 @@
 #include "LEPTON_Macros.h"
 #include "raspi_I2C.h"
 #include "LEPTON_I2C_Reg.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <fcntl.h>
@@ -69,7 +68,9 @@
 /** LOCAL DEFINES                                                            **/
 /******************************************************************************/
 //Raspi handle;
-int leptonDevice;
+int leptonDevice0;
+int leptonDevice1;
+
 const LEP_INT32 ADDRESS_SIZE_BYTES = 2;
 const LEP_INT32 VALUE_SIZE_BYTES = 2;
 float clk_rate;
@@ -132,11 +133,16 @@ LEP_RESULT DEV_I2C_MasterInit(LEP_UINT16 portID,
    //aa_target_power(handle, AA_TARGET_POWER_BOTH);
 
     //do it live!
+   
+    int leptonDevice;
     if(portID) {
-        leptonDevice = open("/dev/i2c-1", O_RDWR);
-    } else {
-        leptonDevice = open("/dev/i2c-0", O_RDWR);
-    }
+	leptonDevice1 = open("/dev/i2c-1", O_RDWR);
+	leptonDevice = leptonDevice1;
+   } else {
+	leptonDevice0 = open("/dev/i2c-0", O_RDWR);
+	leptonDevice = leptonDevice0;
+   }
+
     if(leptonDevice < 0) {
 	//we have problem connecting
 	result = LEP_ERROR;
@@ -212,7 +218,12 @@ LEP_RESULT DEV_I2C_MasterReadData(LEP_UINT16  portID,               // User-defi
 
    //DONE: here we do a raspi raspi_i2c_write_read
    //this means writing the register, then reading bytes!
-
+   int leptonDevice;
+   if(portID) {
+	leptonDevice = leptonDevice1;
+   } else {
+	leptonDevice = leptonDevice0;
+   }
 
    int writeValue = write(leptonDevice, txdata, bytesToWrite);
    if(writeValue < 0) {
@@ -289,7 +300,13 @@ LEP_RESULT DEV_I2C_MasterWriteData(LEP_UINT16  portID,              // User-defi
    
     //DONE: here we do raspi_i2c_write_ext
     //raspi_result = aa_i2c_write_ext(handle, deviceAddress, AA_I2C_NO_FLAGS, bytesToWrite, (LEP_UINT8*)txdata, (u16*)&bytesActuallyWritten);
-
+    
+    int leptonDevice;
+    if(portID) {
+	leptonDevice = leptonDevice1;
+    } else {
+	leptonDevice = leptonDevice0;
+    }
 
     bytesActuallyWritten = write(leptonDevice, (LEP_UINT8*)txdata, bytesToWrite);
 
