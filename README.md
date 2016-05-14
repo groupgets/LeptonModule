@@ -3,7 +3,7 @@ LeptonModule
 The FLIR Lepton™ is the most compact longwave infrared (LWIR) sensor available as an OEM product. It packs a resolution of 80 × 60 pixels into a camera body that is smaller than a dime. This revolutionary camera core is poised to equip a new generation of mobile and handheld devices, as well as small fixed-mount camera systems, with thermal imaging capabilities never seen before. Lepton contains a breakthrough lens fabricated in wafer form, along with a microbolometer focal plane array (FPA) and advanced thermal image processing. 
 
 More Information
-http://www.pureengineering.com/projects/lepton
+https://groupgets.com/manufacturers/flir/products/flir-lepton
 
 
 beagleboneblack_video
@@ -24,7 +24,7 @@ you have to enable the spi and i2c ports first for this code to work.
 4. to capture an image run "sudo ./a.out"
 5. a file called image.pgm will be created, you can use GIMP to view the image
 
-See the wiki page for more information: https://github.com/PureEngineering/LeptonModule/wiki
+See the wiki page for more information: https://github.com/groupgets/LeptonModule/wiki
 
 Software modules:
 
@@ -52,3 +52,7 @@ This super simple win32 example shows how draw the images onto the screen of a w
 edison_capture
 --------------
 This example shows how to capture a still image from the lepton using Intel Edison.
+
+Python
+--------------
+If you'd like to use the breakout board with Python on Linux, check out the pylepton project: https://github.com/groupgets/pylepton
