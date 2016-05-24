@@ -227,9 +227,9 @@ extern LEP_RESULT LEP_GetAgcLinearHistogramTailSize( LEP_CAMERA_PORT_DESC_T_PTR 
 extern LEP_RESULT LEP_SetAgcLinearHistogramTailSize( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
                                                      LEP_UINT16 agcLinearHistogramTailSize );
 
-extern LEP_RESULT LEP_GetAgcHistogramClipPercent( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
+extern LEP_RESULT LEP_GetAgcLinearHistogramClipPercent( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
                                                   LEP_UINT16 *agcLinearClipPercentPtr );
-extern LEP_RESULT LEP_SetAgcHistogramClipPercent( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
+extern LEP_RESULT LEP_SetAgcLinearHistogramClipPercent( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
                                                   LEP_UINT16 agcLinearClipPercent );
 
 extern LEP_RESULT LEP_GetAgcLinearMaxGain( LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
