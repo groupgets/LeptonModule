@@ -36,7 +36,7 @@ int SpiOpenPort (int spi_device)
 	if (spi_device)
 		*spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
 	else
-		*spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
+		*spi_cs_fd = open(std::string("/dev/spidev0.0").c_str(), O_RDWR);
 
 	if (*spi_cs_fd < 0)
 	{
