@@ -53,6 +53,10 @@ edison_capture
 --------------
 This example shows how to capture a still image from the lepton using Intel Edison.
 
+v4l2lepton
+----------
+This simple program will stream frames from the Lepton to a v4l2loopback device. Very useful for interacting with the Lepton in the same way you would a webcam. This was created mainly for use on Raspberry Pi with the original breakout board.
+
 Python
 --------------
 If you'd like to use the breakout board with Python on Linux, check out the pylepton project: https://github.com/groupgets/pylepton
