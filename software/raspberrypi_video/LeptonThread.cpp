@@ -20,9 +20,10 @@ LeptonThread::~LeptonThread() {}
 
 void LeptonThread::run()
 {
+	uint16_t spi_port = 1;
 	//Create the initial image and open the Spi port.
 	myImage = QImage(160, 120, QImage::Format_RGB888);
-	SpiOpenPort(0);
+	SpiOpenPort(spi_port);
 	uint32_t totalCounts = 0;
 	uint16_t minValue = 65535;
 	uint16_t maxValue = 0;
@@ -33,7 +34,13 @@ void LeptonThread::run()
 
 		//Read through one segment, line by line.	
 		for(int j=0;j<PACKETS_PER_FRAME;j++) {
-			read(spi_cs0_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
+			if(spi_port){
+				read(spi_cs1_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
+			
+			} else {
+				read(spi_cs0_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
+				
+			}
 			int packetNumber = result[j*PACKET_SIZE+1];
 
 			//Check to make sure packet number is correct, or else the Lepton is out of sync.
@@ -43,9 +50,9 @@ void LeptonThread::run()
 				resets += 1;
 				usleep(1000);
 				if(resets == 750) {
-					SpiClosePort(0);
+					SpiClosePort(spi_port);
 					usleep(750000);
-					SpiOpenPort(0);
+					SpiOpenPort(spi_port);
 				}
 			}
 		}
@@ -119,7 +126,7 @@ void LeptonThread::run()
 		totalCounts = 0;
 	}
 	
-	SpiClosePort(0);
+	SpiClosePort(spi_port);
 }
 
 void LeptonThread::performFFC() {

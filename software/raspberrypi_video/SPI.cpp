@@ -24,8 +24,7 @@ int SpiOpenPort (int spi_device)
 	spi_bitsPerWord = 8;
 
 	//----- SET SPI BUS SPEED -----//
-	spi_speed = 32000000;		// Use 24000000 = 24MHz for RBPi 2
-					// Use 32000000 = 32MHz for RBPi 3
+	spi_speed = 32000000;		// Use 20000000 = 20MHz
 
 
 	if (spi_device)
@@ -37,7 +36,7 @@ int SpiOpenPort (int spi_device)
 	if (spi_device)
 		*spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
 	else
-		*spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
+		*spi_cs_fd = open(std::string("/dev/spidev0.0").c_str(), O_RDWR);
 
 	if (*spi_cs_fd < 0)
 	{
