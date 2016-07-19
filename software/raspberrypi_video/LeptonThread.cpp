@@ -3,12 +3,26 @@
 #include "Palettes.h"
 #include "SPI.h"
 #include "Lepton_I2C.h"
+#include <errno.h>
 
-#define PACKET_SIZE 164
-#define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
-#define PACKETS_PER_FRAME 60
-#define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
-#define FPS 27
+//We are using a struct for the entire image, made up of 4 segments, 60 lines
+//each, with 164 bytes of data. Allows easy use of sizeof() in code.
+typedef struct __attribute__((packed)) _packet {
+	uint16_t packet_number;
+	uint16_t crc;
+	uint8_t video_src[160];
+} packet;
+
+typedef struct __attribute__((packed)) _segment {
+	packet line[60];
+} segment;
+
+typedef struct __attribute__((packed)) _image {
+	segment seg[4];
+} image;
+
+
+#define FPS (27)
 
 #define HAND_TEMP_THRESHOLD 8050
 
@@ -20,102 +34,134 @@ LeptonThread::~LeptonThread() {}
 
 void LeptonThread::run()
 {
-	uint16_t spi_port = 1;
 	//Create the initial image and open the Spi port.
+	uint16_t spi_port = 1;
 	myImage = QImage(160, 120, QImage::Format_RGB888);
 	SpiOpenPort(spi_port);
 	uint32_t totalCounts = 0;
 	uint16_t minValue = 65535;
 	uint16_t maxValue = 0;
-	int checkSegment = 1;
+	int resets = 0;
+	
 	//Camera Loop
-	while(true) {
-		int resets = 0;
-
-		//Read through one segment, line by line.	
-		for(int j=0;j<PACKETS_PER_FRAME;j++) {
-			if(spi_port){
-				read(spi_cs1_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
+	while (true) {
+		int spi_port_fd = spi_port == 1 ? spi_cs1_fd : spi_cs0_fd;
+		image img;
+		bool flag = false;	
+		for (int segNum = 0; segNum < 4; segNum++) {
 			
-			} else {
-				read(spi_cs0_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
-				
+			//Read through until the 0th packet.
+			int packet_num = 1;
+			while (packet_num != 0) {
+				read(spi_port_fd, &img.seg[segNum], sizeof(packet));
+				packet_num = img.seg[segNum].line[0].packet_number>>8;
 			}
-			int packetNumber = result[j*PACKET_SIZE+1];
-
-			//Check to make sure packet number is correct, or else the Lepton is out of sync.
-			//We have 750 'resets' before re-syncing.
-			if(packetNumber != j) {
-				j = -1;
-				resets += 1;
-				usleep(1000);
-				if(resets == 750) {
-					SpiClosePort(spi_port);
-					usleep(750000);
-					SpiOpenPort(spi_port);
+			
+			//Read the rest of this 1/3 segment.
+			read(spi_port_fd, &img.seg[segNum].line[1], 19*sizeof(packet));
+			
+			//Read the remainder of the segment.
+			for (int part=1;part<3;part++) {
+				read(spi_port_fd, &img.seg[segNum].line[20*(part%3)], 20*sizeof(packet));
+			}
+			
+			//If the segment number is 0, the frame is invalid.
+			if ((img.seg[segNum].line[20].packet_number & 0xff) == 0) {
+				flag = true;
+				if ((img.seg[segNum].line[20].packet_number >> 8) != 0x14) {
+					resets++;
 				}
+				break;
 			}
 		}
+		if (flag) {
+			continue;
+		}
+		
+		//Check to make sure packet number is correct, or else the Lepton is out of sync.
+		//We have 750 'resets' before re-syncing.
+		if (resets == 750) {
+			SpiClosePort(spi_port);
+			usleep(750000);
+			SpiOpenPort(spi_port);
+			resets = 0;
+			continue;
+		}
+			
+
 
 		int row, column;
 		uint16_t value;
 
-		//Obtain the segment number from the header of line 20. It should never be 0.
-		uint8_t segNum = result[20*PACKET_SIZE]>>4;
-		if(segNum != checkSegment){
-			checkSegment = 1;
-			continue;
-		}
-		checkSegment++;
-		if(checkSegment > 4) {
-			checkSegment = 1;
-		}
-
-		 //Iterate through the current segment one line at a time. In this loop, we find the
-		 //minimum and maximum values of the image for AGC.
-		for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+		//Iterate through the current segment pixel at a time. In this loop, we find the
+		//minimum and maximum values of the image for AGC.
+		int lineNum = 0;
+		int pixelNum = 0;
+		int segNum = 0;
+		for (unsigned i=0;i<sizeof(image)/2;i++) {
+			
 			//Skip the header of each line
-			if(i % PACKET_SIZE_UINT16 < 2) continue; 
+			if (i % (sizeof(packet)/2) < 2) {
+				continue;
+			}
+
+			//80 pixels per line, 60 lines per segment.
+			pixelNum++;
+			if (pixelNum == 80) {
+				pixelNum = 0;
+				lineNum++;
+			}
+			if (lineNum == 60) {
+				lineNum = 0;
+				segNum++;
+			}
 			
 			//Flip the MSB and LSB for correct coloring.
-			frameBuffer[i + (segNum-1)*(FRAME_SIZE_UINT16)] = result[i*2]<<8 | result[i*2+1];
-	
-			value = frameBuffer[i+ (segNum-1)*FRAME_SIZE_UINT16];
+			frameBuffer[i] = img.seg[segNum].
+					line[lineNum].
+					video_src[2*pixelNum] << 8 | 
+					img.seg[segNum].
+					line[lineNum].
+					video_src[2*pixelNum+1] << 0;
+			
+			value = frameBuffer[i];
 			totalCounts += value;
-			if(value > maxValue) {
+			if (value > maxValue) {
 				maxValue = value;
 			}
-			if(value < minValue && value > 0) {
+			if (value < minValue && value > 0) {
 				minValue = value;
 			}
-			column = i % PACKET_SIZE_UINT16 - 2;
-			row = i / (PACKET_SIZE_UINT16 * 2);
 		}
-	
-		//We only finalize the image for emission once all four segments are in.
-		if(segNum != 4)continue; 	
 		
 		//If the difference between Max and Min is 0, we need to get a new frame before emitting.
 		float diff = maxValue - minValue;
-		if(diff != 0){
+		if (diff != 0) {
 			float scale = 255/diff;
 			QRgb color;
-
-			//Iterates through the entire frame, all four segments, for colorization.
-			for(int i=0;i<FRAME_SIZE_UINT16*4;i++) {
-				//Skip the header of each line.
-				if(i % PACKET_SIZE_UINT16 < 2) continue; 
+			
+			//Iterates through the entire frame, one pixel at a time, for colorization.
+			for (unsigned i=0;i<sizeof(image)/2;i++) {
 				
+				//Skip the header of each line.
+				if (i % (sizeof(packet)/2) < 2) {
+					continue; 
+				}
+
 				value = (frameBuffer[i] - minValue) * scale;
 				const int *colormap = colormap_ironblack;
-				if(value > 255) value = 255;	
+				if (value > 255) { 
+					value = 255;
+				}
+	
 				color = qRgb(colormap[3*value], colormap[3*value+1], colormap[3*value+2]);
-			
-				column = (i % PACKET_SIZE_UINT16 ) - 2;
-				row = i / (PACKET_SIZE_UINT16);
-				int new_row = (row/2);
-				int new_column = (row % 2 == 0) ? column : column + 80 ;
-				myImage.setPixel(new_column, new_row, color);
+				
+				
+				column = (i % (sizeof(packet)/2)) - 2;
+				row = i / (sizeof(packet)/2);
+				int newColumn = (row % 2 == 0) ? column : column + 80 ;
+				int newRow = row/2;
+				myImage.setPixel(newColumn, newRow, color);
 			}
 
 			//Emit the finalized image for update.
@@ -124,6 +170,7 @@ void LeptonThread::run()
 		minValue = 65535;
 		maxValue = 0;
 		totalCounts = 0;
+		resets = 0;
 	}
 	
 	SpiClosePort(spi_port);
