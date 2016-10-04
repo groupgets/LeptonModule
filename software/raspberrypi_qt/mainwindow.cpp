@@ -71,6 +71,7 @@ void MainWindow::saveSnapshot() {
     QFile rawFile(QString("raw%1.bin").arg(snapshotCount));
     rawFile.open(QIODevice::Truncate | QIODevice::ReadWrite);
     QDataStream rawOut(&rawFile);
+    rawOut.setByteOrder(QDataStream::LittleEndian);
     rawOut << rawMin << rawMax;
     rawOut.writeRawData((char *) &rawData[0], 2*rawData.size());
     rawFile.close();
