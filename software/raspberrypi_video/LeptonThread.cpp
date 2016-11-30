@@ -3,6 +3,7 @@
 #include "Palettes.h"
 #include "SPI.h"
 #include "Lepton_I2C.h"
+#include <QLabel>
 
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
@@ -10,7 +11,7 @@
 #define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
 #define FPS 27;
 
-LeptonThread::LeptonThread() : QThread()
+LeptonThread::LeptonThread() : QThread(), colorMap(colormap_ironblack)
 {
 }
 
@@ -37,8 +38,6 @@ void LeptonThread::run()
 				j = -1;
 				resets += 1;
 				usleep(1000);
-				//Note: we've selected 750 resets as an arbitrary limit, since there should never be 750 "null" packets between two valid transmissions at the current poll rate
-				//By polling faster, developers may easily exceed this count, and the down period between frames may then be flagged as a loss of sync
 				if(resets == 750) {
 					SpiClosePort(0);
 					usleep(750000);
@@ -87,8 +86,7 @@ void LeptonThread::run()
 				continue;
 			}
 			value = (frameBuffer[i] - minValue) * scale;
-			const int *colormap = colormap_ironblack;
-			color = qRgb(colormap[3*value], colormap[3*value+1], colormap[3*value+2]);
+            color = qRgb(this->colorMap[3*value], this->colorMap[3*value+1], this->colorMap[3*value+2]);
 			column = (i % PACKET_SIZE_UINT16 ) - 2;
 			row = i / PACKET_SIZE_UINT16;
 			myImage.setPixel(column, row, color);
@@ -102,8 +100,27 @@ void LeptonThread::run()
 	//finally, close SPI port just bcuz
 	SpiClosePort(0);
 }
+void LeptonThread::snapImage() {
+
+    QImage bigger = myImage.scaled(6 * myImage.size().width(), 6 * myImage.size().height());
+    bigger.save("/home/pi/snap.png");
+    QLabel *popup = new QLabel();
+    QPixmap pixmap = QPixmap::fromImage(bigger);
+    popup->setPixmap(pixmap);
+    popup->show();
+}
 
 void LeptonThread::performFFC() {
 	//perform FFC
 	lepton_perform_ffc();
+}
+void LeptonThread::rainMap(){
+    this->colorMap = colormap_rainbow;
+}
+void LeptonThread::greyMap() {
+    this->colorMap = colormap_grayscale;
+
+}
+void LeptonThread::ironMap() {
+    this->colorMap = colormap_ironblack;
 }
