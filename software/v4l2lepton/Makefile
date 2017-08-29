@@ -1,6 +1,6 @@
 
 CC = gcc
-GXX = g++
+CXX = g++
 CFLAGS        = -pipe -O2 -Wall -W -D_REENTRANT -lpthread -lLEPTON_SDK -L/usr/lib/arm-linux-gnueabihf -L../raspberrypi_libs/leptonSDKEmb32PUB/Debug
 CXXFLAGS      = -pipe -O2 -Wall -W -D_REENTRANT -lpthread -lLEPTON_SDK -L/usr/lib/arm-linux-gnueabihf -L../raspberrypi_libs/leptonSDKEmb32PUB/Debug
 INCPATH = -I. -I../raspberrypi_libs 
@@ -22,8 +22,8 @@ SPI.o: SPI.cpp SPI.h
 Lepton_I2C.o: 
 	${CXX} -c ${CXXFLAGS} ${INCPATH} -o Lepton_I2C.o Lepton_I2C.cpp
 
-v4l2lepton: v4l2lepton.o
-	${CXX} -o v4l2lepton leptsci.o Palettes.o SPI.o Lepton_I2C.o v4l2lepton.cpp -lpthread -lLEPTON_SDK -L../raspberrypi_libs/leptonSDKEmb32PUB/Debug -Wall
+v4l2lepton: v4l2lepton.o leptsci.o Palettes.o SPI.o
+	${CXX} -o v4l2lepton leptsci.o Palettes.o SPI.o v4l2lepton.cpp ${CXXFLAGS}
 
 leptsci.o: leptsci.c
 
