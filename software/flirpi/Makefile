@@ -1,12 +1,13 @@
+CC = gcc
 CFLAGS = -Wall
 
 all: leptbmp fblept leptgraypng leptcam
 
 leptcam: leptcam.o
-	gcc -o leptcam leptcam.c leptsci.o -lpthread -Wall
+	$(CC) -o leptcam leptcam.c leptsci.o -lpthread $(CFLAGS)
 
 leptgraypng: leptgraypng.c leptsci.o
-	gcc -o leptgraypng leptgraypng.c leptsci.o -lpng -Wall
+	$(CC) -o leptgraypng leptgraypng.c leptsci.o -lpng $(CFLAGS)
 
 leptbmp: leptbmp.c leptsci.o
 
