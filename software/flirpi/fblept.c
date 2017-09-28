@@ -10,6 +10,7 @@
 #include <linux/types.h>
 #include <linux/fb.h>
 #include <string.h>
+#include <sys/time.h>	/* gettimeofday() */
 
 static void pabort(const char *s)
 {
@@ -109,6 +110,10 @@ int main(int argc, char *argv[])
 {
     int fbfd = 0;
     long int screensize = 0;
+    int sec, usec;
+    static struct timeval now, last;
+    static int fps;
+
     fbfd = open("/dev/fb0", O_RDWR);
     if (fbfd == -1)
         pabort("Error: cannot open framebuffer device");
@@ -128,7 +133,8 @@ int main(int argc, char *argv[])
 
     xo = (vinfo.xres - WD * mag) / 2 + vinfo.xoffset;
     yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
-printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
+    printf("Displaying image at (%d,%d) in %dx%d\n",xo,yo,80*mag,60*mag );
+
     if (leptopen())
         return -7;
     if (argc > 1)
@@ -137,6 +143,25 @@ printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
         if (leptget((unsigned short *) img))
             return -8;
         writefb();
+
+        /* Calculate FPS */
+        gettimeofday(&now, NULL);
+        if (now.tv_sec == last.tv_sec) {
+                fps++;
+        } else {
+                printf("FPS = %d\r", fps);
+                fflush(stdout);
+                fps = 0;
+        }
+        sec = now.tv_sec - last.tv_sec;
+        usec = now.tv_usec - last.tv_usec;
+        if (usec < 0) {
+                sec--;
+                usec = usec + 1000000;
+        }
+        last.tv_sec = now.tv_sec;
+        last.tv_usec = now.tv_usec;
+
         //usleep(125000);
     }
     leptclose();
