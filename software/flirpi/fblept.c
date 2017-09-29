@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
     yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
     printf("Displaying image at (%d,%d) in %dx%d\n",xo,yo,80*mag,60*mag );
 
-    if (leptopen())
+    if (leptopen(spidev))
         return -7;
 
     for (;;) {
