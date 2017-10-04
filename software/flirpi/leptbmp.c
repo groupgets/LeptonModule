@@ -76,7 +76,7 @@ static void writebmp(void)
 
 int main(int argc, char *argv[])
 {
-    if (leptopen() || leptget((unsigned short *) img))
+    if (leptopen(NULL) || leptget((unsigned short *) img))
         return -1;
     leptclose();
     writebmp();
