@@ -25,7 +25,7 @@ static char *fbp = 0;
 #define HT 60
 
 static unsigned short img[HT][80];
-static unsigned char mag = 1,xo,yo;
+static unsigned char mag = 0, xo, yo;
 static unsigned contour = 0;
 static void writefb(void)
 {
@@ -105,10 +105,65 @@ static void writefb(void)
 
 #include "leptsci.h"
 
+void usage(char *exec)
+{
+    printf("Usage: %s [options]\n"
+           "Options:\n"
+           "  -c | --contour           Set contour to 1\n"
+           "  -h | --help              Print this message\n"
+           "  -m | --magnify factor    Force given factor as magnify factor "
+               "instead of auto-calculated one\n"
+           "", exec);
+}
+
+static const char short_options [] = "chm:";
+
+static const struct option long_options [] = {
+    { "contour", no_argument,       NULL, 'c' },
+    { "help",    no_argument,       NULL, 'h' },
+    { "magnify", required_argument, NULL, 'm' },
+    { 0, 0, 0, 0 }
+};
+
 int main(int argc, char *argv[])
 {
     int fbfd = 0;
     long int screensize = 0;
+
+    /* Processing command line parameters */
+    for (;;) {
+        int index;
+        int c;
+
+        c = getopt_long(argc, argv,
+                        short_options, long_options,
+                        &index);
+
+        if (-1 == c)
+            break;
+
+        switch (c) {
+            case 0: /* getopt_long() flag */
+                break;
+
+            case 'c':
+                contour = 1;
+                break;
+
+            case 'h':
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+
+            case 'm':
+                mag = strtoul(optarg, 0, 10);
+                break;
+
+            default:
+                usage(argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+
     fbfd = open("/dev/fb0", O_RDWR);
     if (fbfd == -1)
         pabort("Error: cannot open framebuffer device");
@@ -122,17 +177,19 @@ int main(int argc, char *argv[])
         pabort("Error: failed to map framebuffer device to memory");
     //printf("The framebuffer device was mapped to memory successfully.\n");
     memset( fbp, 0, vinfo.xres*vinfo.yres*(vinfo.bits_per_pixel/8));
-    mag = vinfo.xres / 80;
+    if (!mag) {
+        mag = vinfo.xres / 80;
+    }
     if (vinfo.yres / HT < mag)
         mag = vinfo.yres / HT;
+    printf("Using magnify factor of %dx\n", mag);
 
     xo = (vinfo.xres - WD * mag) / 2 + vinfo.xoffset;
     yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
 printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
     if (leptopen())
         return -7;
-    if (argc > 1)
-        contour = 1;
+
     for (;;) {
         if (leptget((unsigned short *) img))
             return -8;
