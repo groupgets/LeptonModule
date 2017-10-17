@@ -158,12 +158,56 @@ static void *sendvid(void *v)
     }
 }
 
+void usage(char *exec)
+{
+    printf("Usage: %s [options]\n"
+           "Options:\n"
+           "  -h | --help              Print this message\n"
+           "  -v | --video name        Use name as v4l2loopback device (%s by default)\n"
+           "", exec, v4l2dev);
+}
+
+static const char short_options [] = "hv:";
+
+static const struct option long_options [] = {
+    { "help",    no_argument,       NULL, 'h' },
+    { "video",   required_argument, NULL, 'v' },
+    { 0, 0, 0, 0 }
+};
+
 int main(int argc, char **argv)
 {
     struct timespec ts;
 
-    if( argc == 2 )
-        v4l2dev = argv[1];
+    // processing command line parameters
+    for (;;) {
+        int index;
+        int c;
+
+        c = getopt_long(argc, argv,
+                        short_options, long_options,
+                        &index);
+
+        if (-1 == c)
+            break;
+
+        switch (c) {
+            case 0:
+                break;
+
+            case 'h':
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+
+            case 'v':
+                v4l2dev = optarg;
+                break;
+
+            default:
+                usage(argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
 
     open_vpipe();
 
