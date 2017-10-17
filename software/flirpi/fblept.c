@@ -105,21 +105,25 @@ static void writefb(void)
 
 #include "leptsci.h"
 
+char *spidev = "/dev/spidev0.0";
+
 void usage(char *exec)
 {
     printf("Usage: %s [options]\n"
            "Options:\n"
            "  -c | --contour           Set contour to 1\n"
+           "  -d | --device name       spidev device name (%s by default)\n"
            "  -h | --help              Print this message\n"
            "  -m | --magnify factor    Force given factor as magnify factor "
                "instead of auto-calculated one\n"
-           "", exec);
+           "", exec, spidev);
 }
 
-static const char short_options [] = "chm:";
+static const char short_options [] = "cd:hm:";
 
 static const struct option long_options [] = {
     { "contour", no_argument,       NULL, 'c' },
+    { "device",  required_argument, NULL, 'd' },
     { "help",    no_argument,       NULL, 'h' },
     { "magnify", required_argument, NULL, 'm' },
     { 0, 0, 0, 0 }
@@ -148,6 +152,10 @@ int main(int argc, char *argv[])
 
             case 'c':
                 contour = 1;
+                break;
+
+            case 'd':
+                spidev = optarg;
                 break;
 
             case 'h':
@@ -187,7 +195,7 @@ int main(int argc, char *argv[])
     xo = (vinfo.xres - WD * mag) / 2 + vinfo.xoffset;
     yo = (vinfo.yres - HT * mag) / 2 + vinfo.yoffset;
 printf( "%d,%d,%d,%d\n",xo,yo,80*mag,60*mag );
-    if (leptopen())
+    if (leptopen(spidev))
         return -7;
 
     for (;;) {
