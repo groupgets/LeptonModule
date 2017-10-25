@@ -1,6 +1,6 @@
 Released under GPLv3
 
-This is a simple program designed for Raspberry Pi that reads frames from the FLIR Lepton and streams them to a v4l2loopback device. This program would be very useful if you want to stream the Lepton like any other webcam. Maybe you want to process the Lepton frames using a library that can read standard v4l2 devices, like OpenCV. Anything you can do with a webcam, this program will allow you to do it with the Lepton + basic breakout board.
+This is a simple program initially designed for Raspberry Pi that reads frames from the FLIR Lepton and streams them to a v4l2loopback device. This program would be very useful if you want to stream the Lepton like any other webcam. Maybe you want to process the Lepton frames using a library that can read standard v4l2 devices, like OpenCV. Anything you can do with a webcam, this program will allow you to do it with the Lepton + basic breakout board.
 
 Code is borrowed from raspberrypi_video as well as the ondemandcam example provided with v4l2loopback.
 
@@ -23,6 +23,7 @@ To Compile v4l2lepton:
 
 To Run v4l2lepton:
 
-    ./v4l2lepton /dev/videoX
+    ./v4l2lepton -v /dev/videoX -d /dev/spidevY.Z
 
+If spidev device is not given /dev/spidev0.1 will be used by default.  
 You can confirm that the stream is working by using something like VLC Media Player and opening /dev/videoX as a capture device. Anything that can interface with v4l2 devices can use it though.
