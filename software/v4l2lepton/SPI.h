@@ -25,13 +25,12 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 
-extern int spi_cs0_fd;
-extern int spi_cs1_fd;
+extern int spi_cs_fd;
 extern unsigned char spi_mode;
 extern unsigned char spi_bitsPerWord;
 extern unsigned int spi_speed;
 
-int SpiOpenPort(int spi_device);
-int SpiClosePort(int spi_device);
+int SpiOpenPort(char *device);
+int SpiClosePort(void);
 
 #endif

@@ -29,6 +29,7 @@
 #define FPS 27;
 
 static char const *v4l2dev = "/dev/video1";
+static char *spidev = NULL;
 static int v4l2sink = -1;
 static int width = 80;                //640;    // Default for Flash
 static int height = 60;        //480;    // Default for Flash
@@ -40,23 +41,23 @@ static uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
 static uint16_t *frameBuffer;
 
 static void init_device() {
-    SpiOpenPort(0);
+    SpiOpenPort(spidev);
 }
 
 static void grab_frame() {
 
     resets = 0;
     for (int j = 0; j < PACKETS_PER_FRAME; j++) {
-        read(spi_cs0_fd, result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
+        read(spi_cs_fd, result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
         int packetNumber = result[j * PACKET_SIZE + 1];
         if (packetNumber != j) {
             j = -1;
             resets += 1;
             usleep(1000);
             if (resets == 750) {
-                SpiClosePort(0);
+                SpiClosePort();
                 usleep(750000);
-                SpiOpenPort(0);
+                SpiOpenPort(spidev);
             }
         }
     }
@@ -117,7 +118,7 @@ static void grab_frame() {
 }
 
 static void stop_device() {
-    SpiClosePort(0);
+    SpiClosePort();
 }
 
 static void open_vpipe()
@@ -162,14 +163,18 @@ void usage(char *exec)
 {
     printf("Usage: %s [options]\n"
            "Options:\n"
+           "  -d | --device name       Use name as spidev device "
+               "(/dev/spidev0.1 by default)\n"
            "  -h | --help              Print this message\n"
-           "  -v | --video name        Use name as v4l2loopback device (%s by default)\n"
+           "  -v | --video name        Use name as v4l2loopback device "
+               "(%s by default)\n"
            "", exec, v4l2dev);
 }
 
-static const char short_options [] = "hv:";
+static const char short_options [] = "d:hv:";
 
 static const struct option long_options [] = {
+    { "device",  required_argument, NULL, 'd' },
     { "help",    no_argument,       NULL, 'h' },
     { "video",   required_argument, NULL, 'v' },
     { 0, 0, 0, 0 }
@@ -193,6 +198,10 @@ int main(int argc, char **argv)
 
         switch (c) {
             case 0:
+                break;
+
+            case 'd':
+                spidev = optarg;
                 break;
 
             case 'h':
