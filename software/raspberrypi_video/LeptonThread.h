@@ -23,9 +23,13 @@ public:
   ~LeptonThread();
 
   void run();
-
+  const int* colorMap;
 public slots:
   void performFFC();
+  void rainMap();
+  void greyMap();
+  void ironMap();
+  void snapImage();
 
 signals:
   void updateText(QString);
