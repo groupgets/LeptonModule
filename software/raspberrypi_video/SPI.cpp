@@ -5,7 +5,7 @@ int spi_cs1_fd = -1;
 
 unsigned char spi_mode = SPI_MODE_3;
 unsigned char spi_bitsPerWord = 8;
-unsigned int spi_speed = 10000000;
+unsigned int spi_speed = 20000000;
 
 int SpiOpenPort (int spi_device)
 {
@@ -13,18 +13,18 @@ int SpiOpenPort (int spi_device)
 	int *spi_cs_fd;
 
 
-	//----- SET SPI MODE -----
+	//----- SET SPI MODE -----//
 	//SPI_MODE_0 (0,0)  CPOL=0 (Clock Idle low level), CPHA=0 (SDO transmit/change edge active to idle)
 	//SPI_MODE_1 (0,1)  CPOL=0 (Clock Idle low level), CPHA=1 (SDO transmit/change edge idle to active)
 	//SPI_MODE_2 (1,0)  CPOL=1 (Clock Idle high level), CPHA=0 (SDO transmit/change edge active to idle)
 	//SPI_MODE_3 (1,1)  CPOL=1 (Clock Idle high level), CPHA=1 (SDO transmit/change edge idle to active)
 	spi_mode = SPI_MODE_3;
 
-	//----- SET BITS PER WORD -----
+	//----- SET BITS PER WORD -----//
 	spi_bitsPerWord = 8;
 
-	//----- SET SPI BUS SPEED -----
-	spi_speed = 10000000;				//1000000 = 1MHz (1uS per bit)
+	//----- SET SPI BUS SPEED -----//
+	spi_speed = 20000000;
 
 
 	if (spi_device)
