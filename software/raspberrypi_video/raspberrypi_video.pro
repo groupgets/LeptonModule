@@ -3,7 +3,7 @@ TEMPLATE = app
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = 
+TARGET = raspberrypi_video
 
 RPI_LIBS = ../raspberrypi_libs
 LEPTONSDK = leptonSDKEmb32PUB
