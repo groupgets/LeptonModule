@@ -41,6 +41,7 @@ void LeptonThread::run()
 				//By polling faster, developers may easily exceed this count, and the down period between frames may then be flagged as a loss of sync
 				if(resets == 750) {
 					SpiClosePort(0);
+					lepton_reboot();
 					usleep(750000);
 					SpiOpenPort(0);
 				}
