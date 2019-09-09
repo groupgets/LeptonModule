@@ -12,8 +12,22 @@
 #include "LeptonThread.h"
 #include "MyLabel.h"
 
+void printUsage(char *cmd) {
+	printf("Usage: %s [OPTION]...\n"
+               " -h      display this help and exit\n"
+               "", basename(cmd));
+	return;
+}
+
 int main( int argc, char **argv )
 {
+	for(int i=1; i < argc; i++) {
+		if (strcmp(argv[i], "-h") == 0) {
+			printUsage(argv[0]);
+			exit(0);
+		}
+	}
+
 	//create the app
 	QApplication a( argc, argv );
 	
