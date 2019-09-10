@@ -12,15 +12,43 @@
 
 LeptonThread::LeptonThread() : QThread()
 {
+	//
+	typeColormap = 3; // 1:colormap_rainbow  /  2:colormap_grayscale  /  3:colormap_ironblack(default)
+	selectedColormap = colormap_ironblack;
+	selectedColormapSize = get_size_colormap_ironblack();
 }
 
 LeptonThread::~LeptonThread() {
+}
+
+void LeptonThread::useColormap(int newTypeColormap)
+{
+	switch (newTypeColormap) {
+	case 1:
+		typeColormap = 1;
+		selectedColormap = colormap_rainbow;
+		selectedColormapSize = get_size_colormap_rainbow();
+		break;
+	case 2:
+		typeColormap = 2;
+		selectedColormap = colormap_grayscale;
+		selectedColormapSize = get_size_colormap_grayscale();
+		break;
+	default:
+		typeColormap = 3;
+		selectedColormap = colormap_ironblack;
+		selectedColormapSize = get_size_colormap_ironblack();
+		break;
+	}
 }
 
 void LeptonThread::run()
 {
 	//create the initial image
 	myImage = QImage(80, 60, QImage::Format_RGB888);
+
+	const int *colormap = selectedColormap;
+	const int colormapSize = selectedColormapSize;
 
 	//open spi port
 	SpiOpenPort(0);
@@ -88,8 +116,10 @@ void LeptonThread::run()
 				continue;
 			}
 			value = (frameBuffer[i] - minValue) * scale;
-			const int *colormap = colormap_ironblack;
-			color = qRgb(colormap[3*value], colormap[3*value+1], colormap[3*value+2]);
+			int ofs_r = 3 * value + 0; if (colormapSize <= ofs_r) ofs_r = colormapSize - 1;
+			int ofs_g = 3 * value + 1; if (colormapSize <= ofs_g) ofs_g = colormapSize - 1;
+			int ofs_b = 3 * value + 2; if (colormapSize <= ofs_b) ofs_b = colormapSize - 1;
+			color = qRgb(colormap[ofs_r], colormap[ofs_g], colormap[ofs_b]);
 			column = (i % PACKET_SIZE_UINT16 ) - 2;
 			row = i / PACKET_SIZE_UINT16;
 			myImage.setPixel(column, row, color);
@@ -97,7 +127,6 @@ void LeptonThread::run()
 
 		//lets emit the signal for update
 		emit updateImage(myImage);
-
 	}
 	
 	//finally, close SPI port just bcuz

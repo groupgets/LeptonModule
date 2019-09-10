@@ -22,6 +22,7 @@ public:
   LeptonThread();
   ~LeptonThread();
 
+  void useColormap(int);
   void run();
 
 public slots:
@@ -33,6 +34,9 @@ signals:
 
 private:
 
+  int typeColormap;
+  const int *selectedColormap;
+  int selectedColormapSize;
   QImage myImage;
 
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
