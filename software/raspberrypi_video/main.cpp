@@ -15,16 +15,28 @@
 void printUsage(char *cmd) {
 	printf("Usage: %s [OPTION]...\n"
                " -h      display this help and exit\n"
+               " -cm x   select colormap\n"
+               "           1 : rainbow\n"
+               "           2 : grayscale\n"
+               "           3 : ironblack [default]\n"
                "", basename(cmd));
 	return;
 }
 
 int main( int argc, char **argv )
 {
+	int typeColormap = 3; // colormap_ironblack
 	for(int i=1; i < argc; i++) {
 		if (strcmp(argv[i], "-h") == 0) {
 			printUsage(argv[0]);
 			exit(0);
+		}
+		else if ((strcmp(argv[i], "-cm") == 0) && (i + 1 != argc)) {
+			int valColormap = std::atoi(argv[i + 1]);
+			if ((valColormap == 1) || (valColormap == 2)) {
+				typeColormap = valColormap;
+				i++;
+			}
 		}
 	}
 
@@ -57,6 +69,7 @@ int main( int argc, char **argv )
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
 	LeptonThread *thread = new LeptonThread();
+	thread->useColormap(typeColormap);
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
 	//connect ffc button to the thread's ffc action
