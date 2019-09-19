@@ -25,7 +25,7 @@ void printUsage(char *cmd) {
                "           3 : Lepton 3.x\n"
                "               [for your reference] Please use nice command\n"
                "                 e.g. sudo nice -n 0 ./%s -tl 3\n"
-               " -ss x   SIP bus speed [MHz] (10 - 30)\n"
+               " -ss x   SPI bus speed [MHz] (10 - 30)\n"
                "           20 : 20MHz [default]\n"
                " -min x  min value for scaling (0 - 65535)\n"
                "           30000 [default]\n"
