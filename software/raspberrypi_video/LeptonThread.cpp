@@ -26,6 +26,8 @@ LeptonThread::LeptonThread() : QThread()
 	spiSpeed = 20 * 1000 * 1000; // SPI bus speed 20MHz
 
 	// min/max value for scaling
+	autoRangeMin = true;
+	autoRangeMax = true;
 	rangeMin = 30000;
 	rangeMax = 32000;
 }
@@ -74,13 +76,21 @@ void LeptonThread::useSpiSpeedMhz(unsigned int newSpiSpeed)
 	spiSpeed = newSpiSpeed * 1000 * 1000;
 }
 
+void LeptonThread::setAutomaticScalingRange()
+{
+	autoRangeMin = true;
+	autoRangeMax = true;
+}
+
 void LeptonThread::useRangeMinValue(uint16_t newMinValue)
 {
+	autoRangeMin = false;
 	rangeMin = newMinValue;
 }
 
 void LeptonThread::useRangeMaxValue(uint16_t newMaxValue)
 {
+	autoRangeMax = false;
 	rangeMax = newMaxValue;
 }
 
@@ -136,8 +146,39 @@ void LeptonThread::run()
 		int ofsRow = 30 * (segmentNumber - 1);
 
 		frameBuffer = (uint16_t *)result;
+		if ((autoRangeMin == true) || (autoRangeMax == true)) {
+			if (autoRangeMin == true) {
+				maxValue = 65535;
+			}
+			if (autoRangeMax == true) {
+				maxValue = 0;
+			}
+			for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+				//skip the first 2 uint16_t's of every packet, they're 4 header bytes
+				if(i % PACKET_SIZE_UINT16 < 2) {
+					continue;
+				}
+
+				//flip the MSB and LSB at the last second
+				uint16_t value = (result[i*2] << 8) + result[i*2+1];
+				if (value == 0) {
+					// Why this value is 0?
+					continue;
+				}
+				if ((autoRangeMax == true) && (value > maxValue)) {
+					maxValue = value;
+				}
+				if ((autoRangeMin == true) && (value < minValue)) {
+					minValue = value;
+				}
+			}
+			diff = maxValue - minValue;
+			scale = 255/diff;
+		}
+
 		int row, column;
 		uint16_t value;
+		uint16_t valueFrameBuffer;
 		QRgb color;
 		for(int i=0;i<FRAME_SIZE_UINT16;i++) {
 			//skip the first 2 uint16_t's of every packet, they're 4 header bytes
@@ -146,17 +187,14 @@ void LeptonThread::run()
 			}
 
 			//flip the MSB and LSB at the last second
-			int temp = result[i*2];
-			result[i*2] = result[i*2+1];
-			result[i*2+1] = temp;
-
-			if (frameBuffer[i] == 0) {
+			valueFrameBuffer = (result[i*2] << 8) + result[i*2+1];
+			if (valueFrameBuffer == 0) {
 				// Why this value is 0?
 				break;
 			}
 
 			//
-			value = (frameBuffer[i] - minValue) * scale;
+			value = (valueFrameBuffer - minValue) * scale;
 			int ofs_r = 3 * value + 0; if (colormapSize <= ofs_r) ofs_r = colormapSize - 1;
 			int ofs_g = 3 * value + 1; if (colormapSize <= ofs_g) ofs_g = colormapSize - 1;
 			int ofs_b = 3 * value + 2; if (colormapSize <= ofs_b) ofs_b = colormapSize - 1;

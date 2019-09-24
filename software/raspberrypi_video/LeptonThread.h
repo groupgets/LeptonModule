@@ -25,6 +25,7 @@ public:
   void useColormap(int);
   void useLepton(int);
   void useSpiSpeedMhz(unsigned int);
+  void setAutomaticScalingRange();
   void useRangeMinValue(uint16_t);
   void useRangeMaxValue(uint16_t);
   void run();
@@ -43,6 +44,8 @@ private:
   int selectedColormapSize;
   int typeLepton;
   unsigned int spiSpeed;
+  bool autoRangeMin;
+  bool autoRangeMax;
   uint16_t rangeMin;
   uint16_t rangeMax;
   int myImageWidth;

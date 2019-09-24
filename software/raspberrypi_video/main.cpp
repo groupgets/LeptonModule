@@ -27,10 +27,12 @@ void printUsage(char *cmd) {
                "                 e.g. sudo nice -n 0 ./%s -tl 3\n"
                " -ss x   SPI bus speed [MHz] (10 - 30)\n"
                "           20 : 20MHz [default]\n"
-               " -min x  min value for scaling (0 - 65535)\n"
-               "           30000 [default]\n"
-               " -max x  max value for scaling (0 - 65535)\n"
-               "           32000 [default]\n"
+               " -min x  override minimum value for scaling (0 - 65535)\n"
+               "           [default] automatic scaling range adjustment\n"
+               "           e.g. -min 30000\n"
+               " -max x  override maximum value for scaling (0 - 65535)\n"
+               "           [default] automatic scaling range adjustment\n"
+               "           e.g. -max 32000\n"
                "", cmdname, cmdname);
 	return;
 }
@@ -40,8 +42,8 @@ int main( int argc, char **argv )
 	int typeColormap = 3; // colormap_ironblack
 	int typeLepton = 2; // Lepton 2.x
 	int spiSpeed = 20; // SPI bus speed 20MHz
-	int rangeMin = 30000; //
-	int rangeMax = 32000; //
+	int rangeMin = -1; //
+	int rangeMax = -1; //
 	for(int i=1; i < argc; i++) {
 		if (strcmp(argv[i], "-h") == 0) {
 			printUsage(argv[0]);
@@ -116,8 +118,9 @@ int main( int argc, char **argv )
 	thread->useColormap(typeColormap);
 	thread->useLepton(typeLepton);
 	thread->useSpiSpeedMhz(spiSpeed);
-	thread->useRangeMinValue(rangeMin);
-	thread->useRangeMaxValue(rangeMax);
+	thread->setAutomaticScalingRange();
+	if (0 <= rangeMin) thread->useRangeMinValue(rangeMin);
+	if (0 <= rangeMax) thread->useRangeMaxValue(rangeMax);
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
 	//connect ffc button to the thread's ffc action
