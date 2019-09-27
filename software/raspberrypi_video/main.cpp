@@ -33,6 +33,7 @@ void printUsage(char *cmd) {
                " -max x  override maximum value for scaling (0 - 65535)\n"
                "           [default] automatic scaling range adjustment\n"
                "           e.g. -max 32000\n"
+               " -d x    log level (0-255)\n"
                "", cmdname, cmdname);
 	return;
 }
@@ -44,10 +45,21 @@ int main( int argc, char **argv )
 	int spiSpeed = 20; // SPI bus speed 20MHz
 	int rangeMin = -1; //
 	int rangeMax = -1; //
+	int loglevel = 0;
 	for(int i=1; i < argc; i++) {
 		if (strcmp(argv[i], "-h") == 0) {
 			printUsage(argv[0]);
 			exit(0);
+		}
+		else if (strcmp(argv[i], "-d") == 0) {
+			int val = 3;
+			if ((i + 1 != argc) && (strncmp(argv[i + 1], "-", 1) != 0)) {
+				val = std::atoi(argv[i + 1]);
+				i++;
+			}
+			if (0 <= val) {
+				loglevel = val & 0xFF;
+			}
 		}
 		else if ((strcmp(argv[i], "-cm") == 0) && (i + 1 != argc)) {
 			int val = std::atoi(argv[i + 1]);
@@ -115,6 +127,7 @@ int main( int argc, char **argv )
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
 	LeptonThread *thread = new LeptonThread();
+	thread->setLogLevel(loglevel);
 	thread->useColormap(typeColormap);
 	thread->useLepton(typeLepton);
 	thread->useSpiSpeedMhz(spiSpeed);

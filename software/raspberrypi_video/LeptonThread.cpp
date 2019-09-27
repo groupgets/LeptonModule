@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "LeptonThread.h"
 
 #include "Palettes.h"
@@ -12,6 +14,9 @@
 
 LeptonThread::LeptonThread() : QThread()
 {
+	//
+	loglevel = 0;
+
 	//
 	typeColormap = 3; // 1:colormap_rainbow  /  2:colormap_grayscale  /  3:colormap_ironblack(default)
 	selectedColormap = colormap_ironblack;
@@ -33,6 +38,11 @@ LeptonThread::LeptonThread() : QThread()
 }
 
 LeptonThread::~LeptonThread() {
+}
+
+void LeptonThread::setLogLevel(uint16_t newLoglevel)
+{
+	loglevel = newLoglevel;
 }
 
 void LeptonThread::useColormap(int newTypeColormap)
@@ -105,6 +115,9 @@ void LeptonThread::run()
 	uint16_t maxValue = rangeMax;
 	float diff = maxValue - minValue;
 	float scale = 255/diff;
+	uint16_t n_wrong_segment = 0;
+	uint16_t n_zero_value_drop_frame = 0;
+	int ofsRow = 0;
 
 	//open spi port
 	SpiOpenPort(0, spiSpeed);
@@ -127,23 +140,39 @@ void LeptonThread::run()
 				if(resets == 750) {
 					SpiClosePort(0);
 					lepton_reboot();
+					n_wrong_segment = 0;
+					n_zero_value_drop_frame = 0;
 					usleep(750000);
 					SpiOpenPort(0, spiSpeed);
 				}
 				continue;
 			}
-			if(packetNumber == 20) {
+			if ((typeLepton == 3) && (packetNumber == 20)) {
 				segmentNumber = (result[j*PACKET_SIZE] >> 4) & 0x0f;
+				if ((segmentNumber < 1) || (4 < segmentNumber)) {
+					log_message(10, "[ERROR] Wrong segment number " + std::to_string(segmentNumber));
+					break;
+				}
 			}
 		}
 		if(resets >= 30) {
-			qDebug() << "done reading, resets: " << resets;
+			log_message(3, "done reading, resets: " + std::to_string(resets));
 		}
 
-		if ((typeLepton == 3) && ((segmentNumber < 1) || (4 < segmentNumber))) {
-			continue;
+		if (typeLepton == 3) {
+			if ((segmentNumber < 1) || (4 < segmentNumber)) {
+				n_wrong_segment++;
+				if ((n_wrong_segment % 12) == 0) {
+					log_message(5, "[WARNING] Got wrong segment number continuously " + std::to_string(n_wrong_segment) + " times");
+				}
+				continue;
+			}
+			if (n_wrong_segment != 0) {
+				log_message(8, "[WARNING] Got wrong segment number continuously " + std::to_string(n_wrong_segment) + " times [RECOVERED] : " + std::to_string(segmentNumber));
+				n_wrong_segment = 0;
+			}
+			ofsRow = 30 * (segmentNumber - 1);
 		}
-		int ofsRow = 30 * (segmentNumber - 1);
 
 		frameBuffer = (uint16_t *)result;
 		if ((autoRangeMin == true) || (autoRangeMax == true)) {
@@ -190,6 +219,10 @@ void LeptonThread::run()
 			valueFrameBuffer = (result[i*2] << 8) + result[i*2+1];
 			if (valueFrameBuffer == 0) {
 				// Why this value is 0?
+				n_zero_value_drop_frame++;
+				if ((n_zero_value_drop_frame % 12) == 0) {
+					log_message(5, "[WARNING] Found zero-value. Drop the frame continuously " + std::to_string(n_zero_value_drop_frame) + " times");
+				}
 				break;
 			}
 
@@ -210,6 +243,11 @@ void LeptonThread::run()
 			myImage.setPixel(column, row, color);
 		}
 
+		if (n_zero_value_drop_frame != 0) {
+			log_message(8, "[WARNING] Found zero-value. Drop the frame continuously " + std::to_string(n_zero_value_drop_frame) + " times [RECOVERED]");
+			n_zero_value_drop_frame = 0;
+		}
+
 		//lets emit the signal for update
 		emit updateImage(myImage);
 	}
@@ -222,3 +260,11 @@ void LeptonThread::performFFC() {
 	//perform FFC
 	lepton_perform_ffc();
 }
+
+void LeptonThread::log_message(uint16_t level, std::string msg)
+{
+	if (level <= loglevel) {
+		std::cerr << msg << std::endl;
+	}
+}
+
