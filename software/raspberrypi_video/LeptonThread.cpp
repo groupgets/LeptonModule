@@ -117,7 +117,6 @@ void LeptonThread::run()
 	float scale = 255/diff;
 	uint16_t n_wrong_segment = 0;
 	uint16_t n_zero_value_drop_frame = 0;
-	int ofsRow = 0;
 
 	//open spi port
 	SpiOpenPort(0, spiSpeed);
@@ -159,6 +158,10 @@ void LeptonThread::run()
 			log_message(3, "done reading, resets: " + std::to_string(resets));
 		}
 
+
+		//
+		int iSegmentStart = 1;
+		int iSegmentStop;
 		if (typeLepton == 3) {
 			if ((segmentNumber < 1) || (4 < segmentNumber)) {
 				n_wrong_segment++;
@@ -171,10 +174,19 @@ void LeptonThread::run()
 				log_message(8, "[WARNING] Got wrong segment number continuously " + std::to_string(n_wrong_segment) + " times [RECOVERED] : " + std::to_string(segmentNumber));
 				n_wrong_segment = 0;
 			}
-			ofsRow = 30 * (segmentNumber - 1);
+
+			//
+			memcpy(shelf[segmentNumber - 1], result, sizeof(uint8_t) * PACKET_SIZE*PACKETS_PER_FRAME);
+			if (segmentNumber != 4) {
+				continue;
+			}
+			iSegmentStop = 4;
+		}
+		else {
+			memcpy(shelf[0], result, sizeof(uint8_t) * PACKET_SIZE*PACKETS_PER_FRAME);
+			iSegmentStop = 1;
 		}
 
-		frameBuffer = (uint16_t *)result;
 		if ((autoRangeMin == true) || (autoRangeMax == true)) {
 			if (autoRangeMin == true) {
 				maxValue = 65535;
@@ -182,23 +194,25 @@ void LeptonThread::run()
 			if (autoRangeMax == true) {
 				maxValue = 0;
 			}
-			for(int i=0;i<FRAME_SIZE_UINT16;i++) {
-				//skip the first 2 uint16_t's of every packet, they're 4 header bytes
-				if(i % PACKET_SIZE_UINT16 < 2) {
-					continue;
-				}
+			for(int iSegment = iSegmentStart; iSegment <= iSegmentStop; iSegment++) {
+				for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+					//skip the first 2 uint16_t's of every packet, they're 4 header bytes
+					if(i % PACKET_SIZE_UINT16 < 2) {
+						continue;
+					}
 
-				//flip the MSB and LSB at the last second
-				uint16_t value = (result[i*2] << 8) + result[i*2+1];
-				if (value == 0) {
-					// Why this value is 0?
-					continue;
-				}
-				if ((autoRangeMax == true) && (value > maxValue)) {
-					maxValue = value;
-				}
-				if ((autoRangeMin == true) && (value < minValue)) {
-					minValue = value;
+					//flip the MSB and LSB at the last second
+					uint16_t value = (shelf[iSegment - 1][i*2] << 8) + shelf[iSegment - 1][i*2+1];
+					if (value == 0) {
+						// Why this value is 0?
+						continue;
+					}
+					if ((autoRangeMax == true) && (value > maxValue)) {
+						maxValue = value;
+					}
+					if ((autoRangeMin == true) && (value < minValue)) {
+						minValue = value;
+					}
 				}
 			}
 			diff = maxValue - minValue;
@@ -209,38 +223,41 @@ void LeptonThread::run()
 		uint16_t value;
 		uint16_t valueFrameBuffer;
 		QRgb color;
-		for(int i=0;i<FRAME_SIZE_UINT16;i++) {
-			//skip the first 2 uint16_t's of every packet, they're 4 header bytes
-			if(i % PACKET_SIZE_UINT16 < 2) {
-				continue;
-			}
-
-			//flip the MSB and LSB at the last second
-			valueFrameBuffer = (result[i*2] << 8) + result[i*2+1];
-			if (valueFrameBuffer == 0) {
-				// Why this value is 0?
-				n_zero_value_drop_frame++;
-				if ((n_zero_value_drop_frame % 12) == 0) {
-					log_message(5, "[WARNING] Found zero-value. Drop the frame continuously " + std::to_string(n_zero_value_drop_frame) + " times");
+		for(int iSegment = iSegmentStart; iSegment <= iSegmentStop; iSegment++) {
+			int ofsRow = 30 * (iSegment - 1);
+			for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+				//skip the first 2 uint16_t's of every packet, they're 4 header bytes
+				if(i % PACKET_SIZE_UINT16 < 2) {
+					continue;
 				}
-				break;
-			}
 
-			//
-			value = (valueFrameBuffer - minValue) * scale;
-			int ofs_r = 3 * value + 0; if (colormapSize <= ofs_r) ofs_r = colormapSize - 1;
-			int ofs_g = 3 * value + 1; if (colormapSize <= ofs_g) ofs_g = colormapSize - 1;
-			int ofs_b = 3 * value + 2; if (colormapSize <= ofs_b) ofs_b = colormapSize - 1;
-			color = qRgb(colormap[ofs_r], colormap[ofs_g], colormap[ofs_b]);
-			if (typeLepton == 3) {
-				column = (i % PACKET_SIZE_UINT16) - 2 + (myImageWidth / 2) * ((i % (PACKET_SIZE_UINT16 * 2)) / PACKET_SIZE_UINT16);
-				row = i / PACKET_SIZE_UINT16 / 2 + ofsRow;
+				//flip the MSB and LSB at the last second
+				valueFrameBuffer = (shelf[iSegment - 1][i*2] << 8) + shelf[iSegment - 1][i*2+1];
+				if (valueFrameBuffer == 0) {
+					// Why this value is 0?
+					n_zero_value_drop_frame++;
+					if ((n_zero_value_drop_frame % 12) == 0) {
+						log_message(5, "[WARNING] Found zero-value. Drop the frame continuously " + std::to_string(n_zero_value_drop_frame) + " times");
+					}
+					break;
+				}
+
+				//
+				value = (valueFrameBuffer - minValue) * scale;
+				int ofs_r = 3 * value + 0; if (colormapSize <= ofs_r) ofs_r = colormapSize - 1;
+				int ofs_g = 3 * value + 1; if (colormapSize <= ofs_g) ofs_g = colormapSize - 1;
+				int ofs_b = 3 * value + 2; if (colormapSize <= ofs_b) ofs_b = colormapSize - 1;
+				color = qRgb(colormap[ofs_r], colormap[ofs_g], colormap[ofs_b]);
+				if (typeLepton == 3) {
+					column = (i % PACKET_SIZE_UINT16) - 2 + (myImageWidth / 2) * ((i % (PACKET_SIZE_UINT16 * 2)) / PACKET_SIZE_UINT16);
+					row = i / PACKET_SIZE_UINT16 / 2 + ofsRow;
+				}
+				else {
+					column = (i % PACKET_SIZE_UINT16) - 2;
+					row = i / PACKET_SIZE_UINT16;
+				}
+				myImage.setPixel(column, row, color);
 			}
-			else {
-				column = (i % PACKET_SIZE_UINT16) - 2;
-				row = i / PACKET_SIZE_UINT16;
-			}
-			myImage.setPixel(column, row, color);
 		}
 
 		if (n_zero_value_drop_frame != 0) {
