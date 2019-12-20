@@ -20,23 +20,23 @@ To clean:
 make sdkclean && make distclean
 ```
 
-##Raspberry Pi 1,2,3, & Zero
+## Raspberry Pi 1,2,3, & Zero
 
-###Lepton 2.x
+### Lepton 2.x
 To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core use the following code:
 ```
 ./raspberrypi_video
 ```
 
-###Lepton 3.x
+### Lepton 3.x
 To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core use the following code:
 ```
 ./raspberrypi_video -tl 3
 ```
 
-##Raspberry Pi 4
+## Raspberry Pi 4
 
-###Lepton 2.x
+### Lepton 2.x
 To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core first use the following code:
 ```
 sudo sh -c "echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
@@ -46,7 +46,7 @@ Then run this to start the program:
 ./raspberrypi_video
 ```
 
-###Lepton 3.x
+### Lepton 3.x
 To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core first use the following code:
 ```
 sudo sh -c "echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
