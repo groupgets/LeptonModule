@@ -1,9 +1,9 @@
 LeptonModule
 ============
-The FLIR Lepton™ is the most compact longwave infrared (LWIR) sensor available as an OEM product. It packs a resolution of 80 × 60 pixels into a camera body that is smaller than a dime. This revolutionary camera core is poised to equip a new generation of mobile and handheld devices, as well as small fixed-mount camera systems, with thermal imaging capabilities never seen before. Lepton contains a breakthrough lens fabricated in wafer form, along with a microbolometer focal plane array (FPA) and advanced thermal image processing. 
+The FLIR Lepton™ is the most compact longwave infrared (LWIR) sensor available as an OEM product. The Lepton 2.x camera cores has a resolution of 80 × 60 pixels and the newer Lepton 3.x camera cores have a resolution of 160 x 120 pixels respectively. The Lepton 2.5 and 3.5 are both also radiometric which means they can output a factory-calibrated temperature value for all pixels in a frame irrespective of the camera temperature with an accuracy of +/-5˚C. Lepton contains a breakthrough lens fabricated in wafer form, along with a microbolometer focal plane array (FPA) and advanced thermal image processing.
 
 More Information
-https://groupgets.com/manufacturers/flir/products/flir-lepton
+https://groupgets.com/manufacturers/flir/products/lepton-3-5
 
 
 beagleboneblack_video
@@ -15,8 +15,8 @@ Steps are outlined within this directory.
 
 raspberrypi_capture
 --------------
-This is for the raspberry pi, 
-you have to enable the spi and i2c ports first for this code to work. 
+This is for the Raspberry Pi,
+you have to enable the spi and i2c ports first for this code to work.
 
 1. sudo vi /etc/modules
 2. add # in front of spi-bcm2708 and ic2-dev
@@ -26,24 +26,29 @@ you have to enable the spi and i2c ports first for this code to work.
 
 See the wiki page for more information: https://github.com/groupgets/LeptonModule/wiki
 
+raspberrypi_video
+--------------
+This is for the Raspberry Pi, see this page for more information https://github.com/groupgets/LeptonModule/tree/master/software/raspberrypi_video
+
+
 Software modules:
 
 arduino_i2c
 --------------
-This example shows how to read the i2c ports using an Arduino. 
-Note that most Arduino hardware does not have enough memory to buffer the thermal image. 80*60*2 = 9600 bytes. Some of the Arm based units will work. 
+This example shows how to read the i2c ports using an Arduino.
+Note that most Arduino hardware does not have enough memory to buffer the thermal image. 80*60*2 = 9600 bytes. Some of the Arm based units will work.
 
 
 STM32F3Discovery_ChibiOS
 --------------
-Download and install ChibiOS_2.6.5 into the same directory first. 
-This example takes the SPI data stream from the Lepton module, buffers it and send it out the USB VCP device. 
-On the PC the binary stream of data can be parsed easily by looking for the 0xdeadbeef header on each frame. 
+Download and install ChibiOS_2.6.5 into the same directory first.
+This example takes the SPI data stream from the Lepton module, buffers it and send it out the USB VCP device.
+On the PC the binary stream of data can be parsed easily by looking for the 0xdeadbeef header on each frame.
 
 
 stm32nucleo_401re
 --------------
-This example shows how to read stream photos at the rate of about 1 every 2 seconds from the $10 STM32nucleo 401 RE development board. This example uses the mbed toolchain, an extremely simple to use web based IDE. 
+This example shows how to read stream photos at the rate of about 1 every 2 seconds from the $10 STM32nucleo 401 RE development board. This example uses the mbed toolchain, an extremely simple to use web based IDE.
 
 ThermalView
 --------------
