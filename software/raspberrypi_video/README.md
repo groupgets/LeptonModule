@@ -29,7 +29,7 @@ To run the program while still in the raspberrypi_video directory, using a FLIR 
 ```
 
 ### Lepton 3.x
-To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core use the following code:
+To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 3.x camera core use the following code:
 ```
 ./raspberrypi_video -tl 3
 ```
@@ -47,7 +47,7 @@ Then run this to start the program:
 ```
 
 ### Lepton 3.x
-To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 2.x camera core first use the following code:
+To run the program while still in the raspberrypi_video directory, using a FLIR Lepton 3.x camera core first use the following code:
 ```
 sudo sh -c "echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
 ```
