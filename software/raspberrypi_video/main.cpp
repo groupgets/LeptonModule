@@ -126,14 +126,16 @@ int main( int argc, char **argv )
 
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
+	Lepton *myLepton = new Lepton();
+	myLepton->setLogLevel(loglevel);
+	myLepton->useColormap(typeColormap);
+	myLepton->useLepton(typeLepton);
+	myLepton->useSpiSpeedMhz(spiSpeed);
+	myLepton->setAutomaticScalingRange();
+	if (0 <= rangeMin) myLepton->useRangeMinValue(rangeMin);
+	if (0 <= rangeMax) myLepton->useRangeMaxValue(rangeMax);
 	LeptonThread *thread = new LeptonThread();
-	thread->setLogLevel(loglevel);
-	thread->useColormap(typeColormap);
-	thread->useLepton(typeLepton);
-	thread->useSpiSpeedMhz(spiSpeed);
-	thread->setAutomaticScalingRange();
-	if (0 <= rangeMin) thread->useRangeMinValue(rangeMin);
-	if (0 <= rangeMax) thread->useRangeMaxValue(rangeMax);
+	thread->setLepton(myLepton);
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
 	//connect ffc button to the thread's ffc action
