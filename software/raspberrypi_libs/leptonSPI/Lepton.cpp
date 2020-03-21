@@ -24,6 +24,7 @@ Lepton::Lepton()
 	myImageHeight = 60;
 
 	//
+	spiDevice = DEFAULT_SPI_DEVICE;
 	spiSpeed = 20 * 1000 * 1000; // SPI bus speed 20MHz
 
 	// min/max value for scaling
@@ -77,6 +78,11 @@ void Lepton::useLepton(int newTypeLepton)
 	}
 }
 
+void Lepton::useSpiDevice(char *newSpiDevice)
+{
+	spiDevice = newSpiDevice;
+}
+
 void Lepton::useSpiSpeedMhz(unsigned int newSpiSpeed)
 {
 	spiSpeed = newSpiSpeed * 1000 * 1000;
@@ -103,13 +109,15 @@ void Lepton::useRangeMaxValue(uint16_t newMaxValue)
 void Lepton::open()
 {
 	//open spi port
-	SpiOpenPort(0, spiSpeed);
+	SpiSetDevice(spiDevice);
+	SpiSetSpeed(spiSpeed);
+	SpiOpenPort();
 }
 
 void Lepton::close()
 {
 	//close spi port
-	SpiClosePort(0);
+	SpiClosePort();
 }
 
 int Lepton::readFrameData(LeptonAction *leptonAction)
@@ -126,7 +134,7 @@ int Lepton::readFrameData(LeptonAction *leptonAction)
 	int segmentNumber = -1;
 	for(int j=0;j<PACKETS_PER_FRAME;j++) {
 		//if it's a drop packet, reset j to 0, set to -1 so he'll be at 0 again loop
-		read(spi_cs0_fd, result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
+		SpiRead(result+sizeof(uint8_t)*PACKET_SIZE*j, sizeof(uint8_t)*PACKET_SIZE);
 		int packetNumber = result[j*PACKET_SIZE+1];
 		if(packetNumber != j) {
 			j = -1;

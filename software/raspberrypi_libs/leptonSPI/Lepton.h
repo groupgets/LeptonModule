@@ -21,6 +21,7 @@ public:
   void setLogLevel(uint16_t);
   void useColormap(int);
   void useLepton(int);
+  void useSpiDevice(char *);
   void useSpiSpeedMhz(unsigned int);
   void setAutomaticScalingRange();
   void useRangeMinValue(uint16_t);
@@ -40,6 +41,7 @@ private:
   const int *selectedColormap;
   int selectedColormapSize;
   int typeLepton;
+  char *spiDevice;
   unsigned int spiSpeed;
   bool autoRangeMin;
   bool autoRangeMax;
