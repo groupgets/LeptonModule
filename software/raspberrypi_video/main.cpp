@@ -9,32 +9,35 @@
 #include <QString>
 #include <QPushButton>
 
+#include "SPI.h"
 #include "LeptonThread.h"
 #include "MyLabel.h"
 
 void printUsage(char *cmd) {
-        char *cmdname = basename(cmd);
+	char *cmdname = basename(cmd);
 	printf("Usage: %s [OPTION]...\n"
-               " -h      display this help and exit\n"
-               " -cm x   select colormap\n"
-               "           1 : rainbow\n"
-               "           2 : grayscale\n"
-               "           3 : ironblack [default]\n"
-               " -tl x   select type of Lepton\n"
-               "           2 : Lepton 2.x [default]\n"
-               "           3 : Lepton 3.x\n"
-               "               [for your reference] Please use nice command\n"
-               "                 e.g. sudo nice -n 0 ./%s -tl 3\n"
-               " -ss x   SPI bus speed [MHz] (10 - 30)\n"
-               "           20 : 20MHz [default]\n"
-               " -min x  override minimum value for scaling (0 - 65535)\n"
-               "           [default] automatic scaling range adjustment\n"
-               "           e.g. -min 30000\n"
-               " -max x  override maximum value for scaling (0 - 65535)\n"
-               "           [default] automatic scaling range adjustment\n"
-               "           e.g. -max 32000\n"
-               " -d x    log level (0-255)\n"
-               "", cmdname, cmdname);
+			" -h      display this help and exit\n"
+			" -cm x   select colormap\n"
+			"           1 : rainbow\n"
+			"           2 : grayscale\n"
+			"           3 : ironblack [default]\n"
+			" -tl x   select type of Lepton\n"
+			"           2 : Lepton 2.x [default]\n"
+			"           3 : Lepton 3.x\n"
+			"               [for your reference] Please use nice command\n"
+			"                 e.g. sudo nice -n 0 ./%s -tl 3\n"
+			" -sd x   select SPI device\n"
+			"           %s [default]\n"
+			" -ss x   SPI bus speed [MHz] (10 - 30)\n"
+			"           20 : 20MHz [default]\n"
+			" -min x  override minimum value for scaling (0 - 65535)\n"
+			"           [default] automatic scaling range adjustment\n"
+			"           e.g. -min 30000\n"
+			" -max x  override maximum value for scaling (0 - 65535)\n"
+			"           [default] automatic scaling range adjustment\n"
+			"           e.g. -max 32000\n"
+			" -d x    log level (0-255)\n"
+			"", cmdname, cmdname, DEFAULT_SPI_DEVICE);
 	return;
 }
 
@@ -42,6 +45,7 @@ int main( int argc, char **argv )
 {
 	int typeColormap = 3; // colormap_ironblack
 	int typeLepton = 2; // Lepton 2.x
+	char *spiDevice = DEFAULT_SPI_DEVICE; // SPI Device
 	int spiSpeed = 20; // SPI bus speed 20MHz
 	int rangeMin = -1; //
 	int rangeMax = -1; //
@@ -74,6 +78,10 @@ int main( int argc, char **argv )
 				typeLepton = val;
 				i++;
 			}
+		}
+		else if ((strcmp(argv[i], "-sd") == 0) && (i + 1 != argc)) {
+			spiDevice = argv[i + 1];
+			i++;
 		}
 		else if ((strcmp(argv[i], "-ss") == 0) && (i + 1 != argc)) {
 			int val = std::atoi(argv[i + 1]);
@@ -130,6 +138,7 @@ int main( int argc, char **argv )
 	myLepton->setLogLevel(loglevel);
 	myLepton->useColormap(typeColormap);
 	myLepton->useLepton(typeLepton);
+	myLepton->useSpiDevice(spiDevice);
 	myLepton->useSpiSpeedMhz(spiSpeed);
 	myLepton->setAutomaticScalingRange();
 	if (0 <= rangeMin) myLepton->useRangeMinValue(rangeMin);
