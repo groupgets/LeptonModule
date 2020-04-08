@@ -11,9 +11,6 @@
  * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
  */
 
-#ifndef SPI_H
-#define SPI_H
-
 #include <string>
 #include <stdint.h>
 #include <unistd.h>
@@ -25,13 +22,11 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 
-extern int spi_cs0_fd;
-extern int spi_cs1_fd;
-extern unsigned char spi_mode;
-extern unsigned char spi_bitsPerWord;
-extern unsigned int spi_speed;
+#define DEFAULT_SPI_DEVICE "/dev/spidev0.0"
 
-int SpiOpenPort(int spi_device, unsigned int spi_speed);
-int SpiClosePort(int spi_device);
+void SpiSetDevice (char *);
+void SpiSetSpeed (unsigned int);
+int SpiOpenPort();
+size_t SpiRead(void *, size_t);
+int SpiClosePort();
 
-#endif

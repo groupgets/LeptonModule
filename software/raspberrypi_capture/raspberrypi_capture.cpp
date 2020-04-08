@@ -1,17 +1,13 @@
-#include <QApplication>
-#include <QThread>
-#include <QMutex>
-#include <QMessageBox>
+#include <string>
+#include <unistd.h>
 
-#include <QColor>
-#include <QLabel>
-#include <QtDebug>
-#include <QString>
-#include <QPushButton>
-
+#include "Lepton.h"
+#include "LeptonAction.h"
+#include "LeptonActionFile.h"
+#include "LeptonActionFileCsv.h"
+#include "LeptonActionFilePng.h"
+#include "LeptonActionFilePgm.h"
 #include "SPI.h"
-#include "LeptonThread.h"
-#include "MyLabel.h"
 
 void printUsage(char *cmd) {
 	char *cmdname = basename(cmd);
@@ -37,6 +33,25 @@ void printUsage(char *cmd) {
 			"           [default] automatic scaling range adjustment\n"
 			"           e.g. -max 32000\n"
 			" -d x    log level (0-255)\n"
+			" -dms  x delay time [milliseconds] (0 - 65535)\n"
+			"           [default] 0\n"
+			" -ims  x interval [milliseconds] (1 - 65535)\n"
+			" -c    x count (0 - 65535)\n"
+			"           0 : endless\n"
+			"           [default] take one shot\n"
+			" -tff x  select type of file format\n"
+			"           0 : CSV\n"
+			"           1 : PNG [default]\n"
+			"           2 : PGM\n"
+			" -o x    use 'x' as basename for file\n"
+			"           [default] lepton-YYYYMMDD-hhmmss.sss\n"
+			"         extension depends on file format\n"
+			"           CSV : .cvs\n"
+			"           PNG : .png\n"
+			"           PGM : .pmg\n"
+			"Environment variable(s)\n"
+			" LEPTON_DATA_DIR\n"
+			"           make png file(s) in this directory\n"
 			"", cmdname, cmdname, DEFAULT_SPI_DEVICE);
 	return;
 }
@@ -49,7 +64,14 @@ int main( int argc, char **argv )
 	int spiSpeed = 20; // SPI bus speed 20MHz
 	int rangeMin = -1; //
 	int rangeMax = -1; //
+	int delayMs = 0; //
+	int intervalMs = 0; //
+	int limitTakePic = 1; //
+	int count_take_pic = 0;
+	int typeFileFormat = 1; // 1:PNG  2:PGM
+	int segment_number0 = 0;
 	int loglevel = 0;
+	char *filename = NULL;
 	for(int i=1; i < argc; i++) {
 		if (strcmp(argv[i], "-h") == 0) {
 			printUsage(argv[0]);
@@ -104,33 +126,42 @@ int main( int argc, char **argv )
 				i++;
 			}
 		}
-	}
-
-	//create the app
-	QApplication a( argc, argv );
-	
-	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 340, 290);
-
-	//create an image placeholder for myLabel
-	//fill the top left corner with red, just bcuz
-	QImage myImage;
-	myImage = QImage(320, 240, QImage::Format_RGB888);
-	QRgb red = qRgb(255,0,0);
-	for(int i=0;i<80;i++) {
-		for(int j=0;j<60;j++) {
-			myImage.setPixel(i, j, red);
+		else if ((strcmp(argv[i], "-dms") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((0 <= val) && (val <= 65535)) {
+				delayMs = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-ims") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((1 <= val) && (val <= 65535)) {
+				intervalMs = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-c") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((0 <= val) && (val <= 65535)) {
+				limitTakePic = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-tff") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((0 <= val) || (val <= 2)) {
+				typeFileFormat = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-o") == 0) && (i + 1 != argc)) {
+		char *val = argv[i + 1];
+			if (strcmp(val, "") != 0) {
+				filename = val;
+				i++;
+			}
 		}
 	}
-
-	//create a label, and set it's image to the placeholder
-	MyLabel myLabel(myWidget);
-	myLabel.setGeometry(10, 10, 320, 240);
-	myLabel.setPixmap(QPixmap::fromImage(myImage));
-
-	//create a FFC button
-	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
-	button1->setGeometry(320/2-50, 290-35, 100, 30);
 
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
@@ -143,16 +174,53 @@ int main( int argc, char **argv )
 	myLepton->setAutomaticScalingRange();
 	if (0 <= rangeMin) myLepton->useRangeMinValue(rangeMin);
 	if (0 <= rangeMax) myLepton->useRangeMaxValue(rangeMax);
-	LeptonThread *thread = new LeptonThread();
-	thread->setLepton(myLepton);
-	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
-	
-	//connect ffc button to the thread's ffc action
-	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
-	thread->start();
-	
-	myWidget->show();
 
-	return a.exec();
+	//
+	LeptonActionFile *leptonActionFile;
+	switch (typeFileFormat) {
+	case 0:
+		leptonActionFile = new LeptonActionFileCsv(myLepton->getWidth(), myLepton->getHeight());
+		break;
+	case 2:
+		leptonActionFile = new LeptonActionFilePgm(myLepton->getWidth(), myLepton->getHeight());
+		break;
+	default:
+		leptonActionFile = new LeptonActionFilePng(myLepton->getWidth(), myLepton->getHeight());
+		break;
+	}
+	LeptonAction *leptonAction = leptonActionFile;
+
+	//open Lepton port
+	myLepton->open();
+
+	//
+	usleep(delayMs * 1000);
+	while(true) {
+		//read data packets from lepton over SPI
+		int segment_number = myLepton->readFrameData(leptonAction);
+
+		if (segment_number0 + 1 == segment_number) {
+			if ((typeLepton == 2) || (segment_number == 4)) {
+				leptonActionFile->saveBasename(filename);
+				count_take_pic++;
+				if ((limitTakePic != 0) && (limitTakePic <= count_take_pic)) {
+					break;
+				}
+				usleep(intervalMs * 1000);
+				segment_number0 = 0;
+			}
+			else {
+				segment_number0 = segment_number;
+			}
+		}
+		else {
+			segment_number0 = 0;
+		}
+	}
+
+	//finally, close Lepton just bcuz
+	myLepton->close();
+
+	return 0;
 }
 

@@ -11,242 +11,142 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
-#include <pthread.h>
-#include <semaphore.h>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 #include <stdint.h>
 
-#include "Palettes.h"
 #include "SPI.h"
-#include "Lepton_I2C.h"
+#include "Lepton.h"
+#include "LeptonAction.h"
+#include "LeptonActionV4l2.h"
 
-#define PACKET_SIZE 164
-#define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
-#define PACKETS_PER_FRAME 60
-#define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
-#define FPS 27;
+#define DEFAULT_VIDEO_DEVICE "/dev/video1"
 
-static char const *v4l2dev = "/dev/video1";
-static char *spidev = NULL;
-static int v4l2sink = -1;
-static int width = 80;                //640;    // Default for Flash
-static int height = 60;        //480;    // Default for Flash
-static char *vidsendbuf = NULL;
-static int vidsendsiz = 0;
-
-static int resets = 0;
-static uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
-static uint16_t *frameBuffer;
-
-static void init_device() {
-    SpiOpenPort(spidev);
+void printUsage(char *cmd) {
+	char *cmdname = basename(cmd);
+	printf("Usage: %s [OPTION]...\n"
+			" -h      display this help and exit\n"
+			" -cm x   select colormap\n"
+			"           1 : rainbow\n"
+			"           2 : grayscale\n"
+			"           3 : ironblack [default]\n"
+			" -tl x   select type of Lepton\n"
+			"           2 : Lepton 2.x [default]\n"
+			"           3 : Lepton 3.x\n"
+			"               [for your reference] Please use nice command\n"
+			"                 e.g. sudo nice -n 0 ./%s -tl 3\n"
+			" -sd x   select SPI device\n"
+			"           %s [default]\n"
+			" -ss x   SPI bus speed [MHz] (10 - 30)\n"
+			"           20 : 20MHz [default]\n"
+			" -vd x   v4l2 loopback device "
+			"           %s [default]\n"
+			" -min x  override minimum value for scaling (0 - 65535)\n"
+			"           [default] automatic scaling range adjustment\n"
+			"           e.g. -min 30000\n"
+			" -max x  override maximum value for scaling (0 - 65535)\n"
+			"           [default] automatic scaling range adjustment\n"
+			"           e.g. -max 32000\n"
+			"", cmd, cmd, DEFAULT_SPI_DEVICE, DEFAULT_VIDEO_DEVICE);
 }
-
-static void grab_frame() {
-
-    resets = 0;
-    for (int j = 0; j < PACKETS_PER_FRAME; j++) {
-        read(spi_cs_fd, result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
-        int packetNumber = result[j * PACKET_SIZE + 1];
-        if (packetNumber != j) {
-            j = -1;
-            resets += 1;
-            usleep(1000);
-            if (resets == 750) {
-                SpiClosePort();
-                usleep(750000);
-                SpiOpenPort(spidev);
-            }
-        }
-    }
-    if (resets >= 30) {
-        fprintf( stderr, "done reading, resets: \n" );
-    }
-
-    frameBuffer = (uint16_t *)result;
-    int row, column;
-    uint16_t value;
-    uint16_t minValue = 65535;
-    uint16_t maxValue = 0;
-
-    for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
-        if (i % PACKET_SIZE_UINT16 < 2) {
-            continue;
-        }
-
-        int temp = result[i * 2];
-        result[i * 2] = result[i * 2 + 1];
-        result[i * 2 + 1] = temp;
-
-        value = frameBuffer[i];
-        if (value > maxValue) {
-            maxValue = value;
-        }
-        if (value < minValue) {
-            minValue = value;
-        }
-        column = i % PACKET_SIZE_UINT16 - 2;
-        row = i / PACKET_SIZE_UINT16;
-    }
-
-    float diff = maxValue - minValue;
-    float scale = 255 / diff;
-    for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
-        if (i % PACKET_SIZE_UINT16 < 2) {
-            continue;
-        }
-        value = (frameBuffer[i] - minValue) * scale;
-        const int *colormap = colormap_ironblack;
-        column = (i % PACKET_SIZE_UINT16) - 2;
-        row = i / PACKET_SIZE_UINT16;
-
-        // Set video buffer pixel to scaled colormap value
-        int idx = row * width * 3 + column * 3;
-        vidsendbuf[idx + 0] = colormap[3 * value];
-        vidsendbuf[idx + 1] = colormap[3 * value + 1];
-        vidsendbuf[idx + 2] = colormap[3 * value + 2];
-    }
-
-    /*
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    memset( vidsendbuf, 0, 3);
-    memcpy( vidsendbuf+3, vidsendbuf, vidsendsiz-3 );
-    */
-}
-
-static void stop_device() {
-    SpiClosePort();
-}
-
-static void open_vpipe()
-{
-    v4l2sink = open(v4l2dev, O_WRONLY);
-    if (v4l2sink < 0) {
-        fprintf(stderr, "Failed to open v4l2sink device. (%s)\n", strerror(errno));
-        exit(-2);
-    }
-    // setup video for proper format
-    struct v4l2_format v;
-    int t;
-    v.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-    t = ioctl(v4l2sink, VIDIOC_G_FMT, &v);
-    if( t < 0 )
-        exit(t);
-    v.fmt.pix.width = width;
-    v.fmt.pix.height = height;
-    v.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-    vidsendsiz = width * height * 3;
-    v.fmt.pix.sizeimage = vidsendsiz;
-    t = ioctl(v4l2sink, VIDIOC_S_FMT, &v);
-    if( t < 0 )
-        exit(t);
-    vidsendbuf = (char*)malloc( vidsendsiz );
-}
-
-static pthread_t sender;
-static sem_t lock1,lock2;
-static void *sendvid(void *v)
-{
-    (void)v;
-    for (;;) {
-        sem_wait(&lock1);
-        if (vidsendsiz != write(v4l2sink, vidsendbuf, vidsendsiz))
-            exit(-1);
-        sem_post(&lock2);
-    }
-}
-
-void usage(char *exec)
-{
-    printf("Usage: %s [options]\n"
-           "Options:\n"
-           "  -d | --device name       Use name as spidev device "
-               "(/dev/spidev0.1 by default)\n"
-           "  -h | --help              Print this message\n"
-           "  -v | --video name        Use name as v4l2loopback device "
-               "(%s by default)\n"
-           "", exec, v4l2dev);
-}
-
-static const char short_options [] = "d:hv:";
-
-static const struct option long_options [] = {
-    { "device",  required_argument, NULL, 'd' },
-    { "help",    no_argument,       NULL, 'h' },
-    { "video",   required_argument, NULL, 'v' },
-    { 0, 0, 0, 0 }
-};
 
 int main(int argc, char **argv)
 {
-    struct timespec ts;
 
-    // processing command line parameters
-    for (;;) {
-        int index;
-        int c;
+	int typeColormap = 3; // colormap_ironblack
+	int typeLepton = 2; // Lepton 2.x
+	char *spiDevice = DEFAULT_SPI_DEVICE; // SPI Device
+	int spiSpeed = 20; // SPI bus speed 20MHz
+	char *v4l2Device = DEFAULT_VIDEO_DEVICE;
+	int rangeMin = -1; //
+	int rangeMax = -1; //
 
-        c = getopt_long(argc, argv,
-                        short_options, long_options,
-                        &index);
+	for(int i=1; i < argc; i++) {
+		if (strcmp(argv[i], "-h") == 0) {
+			printUsage(argv[0]);
+			exit(0);
+		}
+		else if ((strcmp(argv[i], "-cm") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((val == 1) || (val == 2)) {
+				typeColormap = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-tl") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if (val == 3) {
+				typeLepton = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-sd") == 0) && (i + 1 != argc)) {
+			spiDevice = argv[i + 1];
+			i++;
+		}
+		else if ((strcmp(argv[i], "-ss") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((10 <= val) && (val <= 30)) {
+				spiSpeed = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-vd") == 0) && (i + 1 != argc)) {
+			v4l2Device = argv[i + 1];
+			i++;
+		}
+		else if ((strcmp(argv[i], "-min") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((0 <= val) && (val <= 65535)) {
+				rangeMin = val;
+				i++;
+			}
+		}
+		else if ((strcmp(argv[i], "-max") == 0) && (i + 1 != argc)) {
+			int val = std::atoi(argv[i + 1]);
+			if ((0 <= val) && (val <= 65535)) {
+				rangeMax = val;
+				i++;
+			}
+		}
+	}
 
-        if (-1 == c)
-            break;
+	//
+	Lepton *myLepton = new Lepton();
+	myLepton->useColormap(typeColormap);
+	myLepton->useLepton(typeLepton);
+	myLepton->useSpiDevice(spiDevice);
+	myLepton->useSpiSpeedMhz(spiSpeed);
+	myLepton->setAutomaticScalingRange();
+	if (0 <= rangeMin) myLepton->useRangeMinValue(rangeMin);
+	if (0 <= rangeMax) myLepton->useRangeMaxValue(rangeMax);
 
-        switch (c) {
-            case 0:
-                break;
+	//
+	LeptonActionV4l2 *leptonActionV4l2 = new LeptonActionV4l2();
+	leptonActionV4l2->init(v4l2Device, myLepton->getWidth(), myLepton->getHeight());
 
-            case 'd':
-                spidev = optarg;
-                break;
+	//
+	int segment_number0 = 0;
+	for (;;) {
+		myLepton->open();
+		for (;;) {
+			int segment_number = myLepton->readFrameData((LeptonAction*)leptonActionV4l2);
+			if (segment_number0 + 1 == segment_number) {
+				if ((typeLepton == 2) || (segment_number == 4)) {
+					leptonActionV4l2->send_video();
+					segment_number0 = 0;
+				}
+				else {
+					segment_number0 = segment_number;
+				}
+			}
+			else {
+				segment_number0 = 0;
+			}
+		}
+		myLepton->close();
+	}
 
-            case 'h':
-                usage(argv[0]);
-                exit(EXIT_SUCCESS);
-
-            case 'v':
-                v4l2dev = optarg;
-                break;
-
-            default:
-                usage(argv[0]);
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    open_vpipe();
-
-    // open and lock response
-    if (sem_init(&lock2, 0, 1) == -1)
-        exit(-1);
-    sem_wait(&lock2);
-
-    if (sem_init(&lock1, 0, 1) == -1)
-        exit(-1);
-    pthread_create(&sender, NULL, sendvid, NULL);
-
-    for (;;) {
-        // wait until a frame can be written
-        fprintf( stderr, "Waiting for sink\n" );
-        sem_wait(&lock2);
-        // setup source
-        init_device(); // open and setup SPI
-        for (;;) {
-            grab_frame();
-            // push it out
-            sem_post(&lock1);
-            clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_sec += 2;
-            // wait for it to get written (or is blocking)
-            if (sem_timedwait(&lock2, &ts))
-                break;
-        }
-        stop_device(); // close SPI
-    }
-    close(v4l2sink);
-    return 0;
+	return 0;
 }
