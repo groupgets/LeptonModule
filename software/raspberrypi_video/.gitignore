@@ -4,4 +4,4 @@ gen_objs
 gen_mocs
 *.o
 raspberrypi_video
-
+.qmake*
