@@ -3,5 +3,5 @@ Makefile
 gen_objs
 gen_mocs
 *.o
-raspberrypi_video
+v4l2lepton
 .qmake*
