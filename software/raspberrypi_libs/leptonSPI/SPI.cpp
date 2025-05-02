@@ -1,17 +1,25 @@
 #include "SPI.h"
 
-int spi_cs0_fd = -1;
-int spi_cs1_fd = -1;
+char *spi_dev = DEFAULT_SPI_DEVICE;
+int spi_fd = -1;
 
 unsigned char spi_mode = SPI_MODE_3;
 unsigned char spi_bitsPerWord = 8;
-unsigned int spi_speed = 10000000;
+unsigned int spi_speed = 20 * 1000 * 1000;	// 20MHz
 
-int SpiOpenPort (int spi_device, unsigned int useSpiSpeed)
+void SpiSetDevice (char *useSpiDevice)
+{
+    spi_dev = useSpiDevice;
+}
+
+void SpiSetSpeed (unsigned int useSpiSpeed)
+{
+    spi_speed = useSpiSpeed;
+}
+
+int SpiOpenPort ()
 {
 	int status_value = -1;
-	int *spi_cs_fd;
-
 
 	//----- SET SPI MODE -----
 	//SPI_MODE_0 (0,0)  CPOL=0 (Clock Idle low level), CPHA=0 (SDO transmit/change edge active to idle)
@@ -23,63 +31,50 @@ int SpiOpenPort (int spi_device, unsigned int useSpiSpeed)
 	//----- SET BITS PER WORD -----
 	spi_bitsPerWord = 8;
 
-	//----- SET SPI BUS SPEED -----
-	spi_speed = useSpiSpeed;				//1000000 = 1MHz (1uS per bit)
-
-
-	if (spi_device)
-		spi_cs_fd = &spi_cs1_fd;
-	else
-		spi_cs_fd = &spi_cs0_fd;
-
-
-	if (spi_device)
-		*spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
-	else
-		*spi_cs_fd = open(std::string("/dev/spidev0.0").c_str(), O_RDWR);
-
-	if (*spi_cs_fd < 0)
+	//
+	spi_fd = open(spi_dev, O_RDWR);
+	if (spi_fd < 0)
 	{
 		perror("Error - Could not open SPI device");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_WR_MODE, &spi_mode);
+	status_value = ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode);
 	if(status_value < 0)
 	{
 		perror("Could not set SPIMode (WR)...ioctl fail");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_RD_MODE, &spi_mode);
+	status_value = ioctl(spi_fd, SPI_IOC_RD_MODE, &spi_mode);
 	if(status_value < 0)
 	{
 		perror("Could not set SPIMode (RD)...ioctl fail");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bitsPerWord);
+	status_value = ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bitsPerWord);
 	if(status_value < 0)
 	{
 		perror("Could not set SPI bitsPerWord (WR)...ioctl fail");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_RD_BITS_PER_WORD, &spi_bitsPerWord);
+	status_value = ioctl(spi_fd, SPI_IOC_RD_BITS_PER_WORD, &spi_bitsPerWord);
 	if(status_value < 0)
 	{
 		perror("Could not set SPI bitsPerWord(RD)...ioctl fail");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
+	status_value = ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
 	if(status_value < 0)
 	{
 		perror("Could not set SPI speed (WR)...ioctl fail");
 		exit(1);
 	}
 
-	status_value = ioctl(*spi_cs_fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
+	status_value = ioctl(spi_fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
 	if(status_value < 0)
 	{
 		perror("Could not set SPI speed (RD)...ioctl fail");
@@ -88,18 +83,35 @@ int SpiOpenPort (int spi_device, unsigned int useSpiSpeed)
 	return(status_value);
 }
 
-int SpiClosePort(int spi_device)
+int SpiOpenPort (char *useSpiDevice)
 {
-		int status_value = -1;
-	int *spi_cs_fd;
+	SpiSetDevice(useSpiDevice);
+	int stat = SpiOpenPort();
 
-	if (spi_device)
-		spi_cs_fd = &spi_cs1_fd;
-	else
-		spi_cs_fd = &spi_cs0_fd;
+	return stat;
+}
 
+int SpiOpenPort (char *useSpiDevice, int useSpiSpeed)
+{
+	SpiSetDevice(useSpiDevice);
+	SpiSetSpeed(useSpiSpeed);
+	int stat = SpiOpenPort();
 
-	status_value = close(*spi_cs_fd);
+	return stat;
+}
+
+size_t SpiRead(void *buf, size_t size)
+{
+	size_t rsize = read(spi_fd, buf, size);
+
+	return rsize;
+}
+
+int SpiClosePort()
+{
+	int status_value = -1;
+
+	status_value = close(spi_fd);
 	if(status_value < 0)
 	{
 		perror("Error - Could not close SPI device");

@@ -3,5 +3,5 @@ Makefile
 gen_objs
 gen_mocs
 *.o
-raspberrypi_video
+raspberrypi_capture
 .qmake*
