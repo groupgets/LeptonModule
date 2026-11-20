@@ -1,0 +1,48 @@
+name: Setup question
+description: Help getting something working, or a question about how to use this repository.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository covers the Raspberry Pi examples and hardware files for the Lepton Breakout Board. GroupGets provides this code as is and does not offer support, but clear reports help everyone who uses it.
+
+        Before filing, please check the [README](https://github.com/groupgets/LeptonModule#readme) and search existing issues, open and closed.
+  - type: dropdown
+    id: board
+    attributes:
+      label: "Board"
+      options:
+        - "Breakout Board v2"
+        - "Breakout Board v1"
+        - "Other"
+    validations:
+      required: true
+  - type: dropdown
+    id: lepton
+    attributes:
+      label: "Lepton model"
+      description: "Printed on the label on the back of the Lepton module."
+      options:
+        - "Lepton 3.5"
+        - "Lepton 3.1R"
+        - "Lepton 3.0"
+        - "Lepton 2.5"
+        - "Lepton 2.0"
+        - "Not sure"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: "Host computer and operating system"
+      description: "Run `cat /etc/os-release` and paste the PRETTY_NAME line, for example `Debian GNU/Linux 12 (bookworm)`."
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: "Your question"
+      description: "What you are trying to do and where you got stuck. Include any error output."
+    validations:
+      required: true
