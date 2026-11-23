@@ -6,17 +6,11 @@ body:
       value: |
         This repository covers the Raspberry Pi examples and hardware files for the Lepton Breakout Board. GroupGets provides this code as is and does not offer support, but clear reports help everyone who uses it.
 
+        This repository is for a Lepton read over VoSPI (SPI). For a PureThermal board over USB, use [purethermal1-uvc-capture](https://github.com/groupgets/purethermal1-uvc-capture) or [GetThermal](https://github.com/groupgets/GetThermal).
+
         Before filing, please check the [README](https://github.com/groupgets/LeptonModule#readme) and search existing issues, open and closed.
-  - type: dropdown
-    id: board
-    attributes:
-      label: "Board"
-      options:
-        - "Breakout Board v2"
-        - "Breakout Board v1"
-        - "Other"
-    validations:
-      required: true
+
+        The BeagleBone, Edison, STM32, Arduino and ThermalView examples are no longer supported.
   - type: dropdown
     id: lepton
     attributes:
@@ -31,46 +25,12 @@ body:
         - "Not sure"
     validations:
       required: true
-  - type: dropdown
-    id: host
-    attributes:
-      label: "Raspberry Pi model"
-      options:
-        - "Raspberry Pi 5"
-        - "Raspberry Pi 4"
-        - "Raspberry Pi 3"
-        - "Raspberry Pi Zero 2 W"
-        - "Other"
-    validations:
-      required: true
   - type: input
-    id: os
+    id: setup
     attributes:
-      label: "Operating system and version"
-      description: "Run `cat /etc/os-release` and paste the PRETTY_NAME line, for example `Debian GNU/Linux 12 (bookworm)`."
-    validations:
-      required: true
-  - type: input
-    id: spi_device
-    attributes:
-      label: "SPI device used"
-      description: "The device path your code opens, for example `/dev/spidev0.0` or `/dev/spidev0.1`."
-      placeholder: "/dev/spidev0.0"
-    validations:
-      required: true
-  - type: dropdown
-    id: part
-    attributes:
-      label: "Which part of this repository?"
-      options:
-        - "raspberrypi_video"
-        - "raspberrypi_capture"
-        - "v4l2lepton"
-        - "raspberrypi_qt"
-        - "flirpi"
-        - "Hardware files"
-        - "Legacy example (BeagleBone, Edison, STM32, Arduino, ThermalView)"
-        - "Other"
+      label: "Your setup"
+      description: "Whatever you know of: Raspberry Pi model, OS, the example you ran with its flags, and which pin CS is wired to."
+      placeholder: "Pi 4, bookworm, raspberrypi_video -tl 3, CS on CE0"
     validations:
       required: true
   - type: textarea
@@ -81,26 +41,9 @@ body:
     validations:
       required: true
   - type: textarea
-    id: steps
-    attributes:
-      label: "Steps to reproduce"
-      description: "The exact commands or actions, in order, starting from a fresh setup if you can."
-    validations:
-      required: true
-  - type: textarea
     id: output
     attributes:
-      label: "Full output or error"
-      description: "Paste the complete terminal output or error message. It is formatted as code automatically."
-      render: shell
+      label: "Output or screenshot"
+      description: "Paste any error output, or drag in a screenshot."
     validations:
-      required: true
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: Before submitting
-      options:
-        - label: I searched existing issues, open and closed, for this problem.
-          required: true
-        - label: SPI and I2C are enabled in `raspi-config`, and I checked the wiring against the README.
-          required: false
+      required: false

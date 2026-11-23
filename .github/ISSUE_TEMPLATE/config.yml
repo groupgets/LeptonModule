@@ -1,1 +1,5 @@
 blank_issues_enabled: false
+contact_links:
+  - name: "Lepton community group"
+    url: https://groups.google.com/g/flir-lepton
+    about: "Usage questions and help from other Lepton users."
