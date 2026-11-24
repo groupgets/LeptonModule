@@ -1,0 +1,35 @@
+name: Setup question
+description: Help getting something working, or a question about how to use this repository.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository covers the Raspberry Pi examples and hardware files for the Lepton Breakout Board. GroupGets provides this code as is and does not offer support, but clear reports help everyone who uses it.
+
+        This repository is for a Lepton read over VoSPI (SPI). For a PureThermal board over USB, use [purethermal1-uvc-capture](https://github.com/groupgets/purethermal1-uvc-capture) or [GetThermal](https://github.com/groupgets/GetThermal).
+
+        Before filing, please check the [README](https://github.com/groupgets/LeptonModule#readme) and search existing issues, open and closed.
+
+        The BeagleBone, Edison, STM32, Arduino and ThermalView examples are no longer supported.
+  - type: dropdown
+    id: lepton
+    attributes:
+      label: "Lepton model"
+      description: "Printed on the label on the back of the Lepton module."
+      options:
+        - "Lepton 3.5"
+        - "Lepton 3.1R"
+        - "Lepton 3.0"
+        - "Lepton 2.5"
+        - "Lepton 2.0"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: "Your question"
+      description: "What you are trying to do and where you got stuck. Include any error output."
+    validations:
+      required: true
